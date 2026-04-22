@@ -1,0 +1,120 @@
+# ===========================
+# .NET / C#
+# ===========================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.exe
+*.dll
+*.pdb
+*.user
+*.userosscache
+*.suo
+*.cache
+*.vspscc
+*.vssscc
+*.pidb
+*.svclog
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+project.lock.json
+packages/
+*.DotSettings.user
+BundleArtifacts/
+PublishOutput/
+
+# NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/NuGet.Config
+
+# Source Generator 输出
+Generated/
+*.generated.cs
+
+# ===========================
+# Node.js / npm / Vue / Vite
+# ===========================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+
+# Vite
+*.sw?
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# 自动生成的 TS 代理（Source Generator 产出）
+# generated/*.ts
+
+# pnpm / yarn
+.pnpm-store/
+.yarn/
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# ===========================
+# Tauri / Rust
+# ===========================
+target/
+Cargo.lock
+**/*.rs.bk
+
+# ===========================
+# IDE / 编辑器
+# ===========================
+
+# Visual Studio
+.vs/
+*.rsuser
+*.sln.docstates
+launchSettings.json
+
+# Visual Studio Code（仅忽略个人历史和存储）
+.vscode/*.code-workspace
+.vscode/.browse.c_cpp.db*
+.vscode/.ropeproject
+
+# JetBrains (Rider / WebStorm)
+.idea/
+*.iml
+
+# ===========================
+# 操作系统
+# ===========================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# ===========================
+# 日志 / 临时文件
+# ===========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
