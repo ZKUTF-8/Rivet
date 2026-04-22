@@ -1,0 +1,11 @@
+{
+	"identifier": "default",
+	"description": "默认权限，允许基本窗口操作和打开外部链接",
+	"windows": [
+		"main"
+	],
+	"permissions": [
+		"core:default",
+		"shell:allow-open"
+	]
+}
