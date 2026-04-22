@@ -1,0 +1,23 @@
+---
+description: Tauri — 桌面壳子编码规则
+globs: src/tauri/**/*.{rs,json}
+alwaysApply: false
+---
+
+# Tauri 壳子编码规则
+
+## 项目定位
+
+Tauri v2 壳子负责将 Rivet 应用打包为桌面程序：
+
+- 使用系统自带 WebView2 渲染前端 UI（约 3MB 打包体积）
+- 通过 sidecar 机制拉起 .NET 后端进程
+- 前端构建产物位于 `../web/apps/stress-test/dist`
+- 开发模式代理到 `http://localhost:5173`
+
+## 编码要求
+
+- Rust 代码使用 `///` 文档注释，中文说明
+- `tauri.conf.json` 修改时注意 `frontendDist` 和 `devUrl` 路径的正确性
+- sidecar 配置在 `plugins.shell.sidecar` 中，命令名需与 .NET 发布产物名一致
+- 当前阶段 sidecar 启动代码已注释（TODO），待 .NET 发布流程确定后启用

@@ -1,0 +1,28 @@
+---
+description: Rivet.Core — 框架核心库编码规则
+globs: src/backend/Rivet.Core/**/*.cs
+alwaysApply: false
+---
+
+# Rivet.Core 编码规则
+
+## 项目定位
+
+Rivet.Core 是框架的核心库，目标框架 `netstandard2.0`，未来会发布为 NuGet 包。它包含：
+
+- `[JsCallable]` — 标记可从前端调用的方法
+- `[JsBindable]` — 标记需要前后端双向同步的字段
+- `[JsEvent]` — 标记需要推送到前端的事件
+
+## 编码要求
+
+- 所有 Attribute 类必须使用 `/// <summary>` XML 文档注释，中文说明用途和生成效果
+- 保持 API 极简，这些是用户直接接触的公开 API
+- 不要在此项目中引入 ASP.NET Core 依赖，保持 netstandard2.0 兼容性
+- 新增 Attribute 时参考现有三个的命名模式：`Js` + 动词/形容词 + `Attribute`
+
+## 命名规范
+
+- 命名空间：`Rivet.Core.Attributes`
+- 类名：PascalCase，以 `Attribute` 结尾
+- 属性参数名：PascalCase（如 `ThrottleMs`、`Immediate`）

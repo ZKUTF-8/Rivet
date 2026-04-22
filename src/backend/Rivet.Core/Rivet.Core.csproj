@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <PackageId>Rivet.Core</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Rivet Contributors</Authors>
+    <Description>Rivet framework core - Attribute definitions for .NET + Vue HMI development</Description>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,113 @@
+{
+    // ============================
+    // 编辑器基础设置
+    // ============================
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    // ============================
+    // 资源管理器 — 隐藏编译/生成文件
+    // ============================
+    "files.exclude": {
+        // .NET 编译产物
+        "**/bin": true,
+        "**/obj": true,
+        "**/Debug": true,
+        "**/Release": true,
+        // 前端构建产物
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/dist-ssr": true,
+        "**/.vite": true,
+        // Rust/Tauri 编译产物
+        "**/target": true,
+        // 系统/编辑器临时文件
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/*.suo": true,
+        "**/*.user": true,
+        "**/.vs": true
+    },
+    // 搜索时也排除这些目录
+    "search.exclude": {
+        "**/bin": true,
+        "**/obj": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/target": true,
+        "**/pnpm-lock.yaml": true
+    },
+    // ============================
+    // 文件嵌套折叠（资源管理器分组）
+    // ============================
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        // 许可证文件折叠到 LICENSE 下
+        "LICENSE": "LICENSE_COMMERCIAL.md",
+        // README 折叠
+        "README.md": "README_EN.md",
+        // .NET 解决方案文件折叠
+        "*.slnx": ".editorconfig, Directory.Build.props, Directory.Packages.props, global.json, nuget.config, .dockerignore",
+        "*.sln": ".editorconfig, Directory.Build.props, Directory.Packages.props, global.json, nuget.config, .dockerignore",
+        // .NET 项目文件折叠
+        "*.csproj": "*.cs.meta, appsettings.json, appsettings.*.json, launchSettings.json",
+        // 前端 package.json 折叠
+        "package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, .npmrc, .nvmrc, .node-version, yarn.lock, package-lock.json, bun.lockb",
+        // TypeScript 配置折叠
+        "tsconfig.json": "tsconfig.*.json, env.d.ts, *.d.ts",
+        // Vite 配置折叠
+        "vite.config.ts": "vitest.config.ts, postcss.config.*, tailwind.config.*, unocss.config.*",
+        // Rust Cargo 折叠
+        "Cargo.toml": "Cargo.lock, build.rs, rust-toolchain.toml, .cargo",
+        // Tauri 配置折叠
+        "tauri.conf.json": "capabilities",
+        // Git 相关折叠
+        ".gitignore": ".gitattributes, .mailmap",
+        // 通用：index 文件折叠同名文件
+        "index.ts": "index.*.ts"
+    },
+    // ============================
+    // 各语言缩进覆盖（统一 4 空格）
+    // ============================
+    "[csharp]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "ms-dotnettools.csharp"
+    },
+    "[typescript]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[vue]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "Vue.volar"
+    },
+    "[json]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[jsonc]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[rust]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    },
+    "[yaml]": {
+        "editor.tabSize": 2,
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[html]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "[css]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "vscode.css-language-features"
+    },
+    "[markdown]": {
+        "editor.tabSize": 4
+    }
+}

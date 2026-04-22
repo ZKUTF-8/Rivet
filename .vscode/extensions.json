@@ -1,0 +1,23 @@
+{
+    "recommendations": [
+        // Vue / TypeScript / 前端
+        "Vue.volar",
+        "dbaeumer.vscode-eslint",
+
+        // C# / .NET
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+
+        // Rust
+        "rust-lang.rust-analyzer",
+
+        // Tauri
+        "tauri-apps.tauri-vscode",
+
+        // YAML
+        "redhat.vscode-yaml",
+
+        // 通用
+        "EditorConfig.EditorConfig"
+    ]
+}

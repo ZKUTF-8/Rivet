@@ -1,0 +1,44 @@
+---
+description: Rivet 项目全局规则 — 语言、编码风格、项目概览
+alwaysApply: true
+---
+
+# Rivet 项目全局规则
+
+## 语言要求
+
+- **所有对话、回答、注释、文档一律使用中文（简体）**
+- 仅在以下情况使用英文：代码标识符、类名、方法名、变量名、技术关键字（如 SignalR、MessagePack、Vue、Tauri）、包名、文件名
+- git commit 消息使用中文
+
+## 项目概览
+
+Rivet 是一个 **.NET + Vue 上位机快速开发框架**，核心理念：
+
+- 后端用 .NET 处理硬件/业务逻辑，前端用 Vue 做 UI 渲染
+- 通过 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 三个特性标记，由 Source Generator 自动生成 SignalR Hub 方法和 TypeScript 代理
+- 开发者只需要写后端逻辑 + 前端 UI，中间的通信层完全自动化
+- Tauri 作为桌面壳子，通过 sidecar 拉起 .NET 进程
+
+## 项目结构
+
+```
+src/backend/    → .NET 后端（Rivet.Core / Rivet.Generator / Rivet.DevApp）
+src/web/        → 前端 pnpm workspace（@rivet/client 包 + 应用）
+src/tauri/      → Tauri v2 桌面壳子
+```
+
+## 编码规范
+
+- **所有公开的类、方法、属性、字段必须使用 XML 文档注释（C#）或 JSDoc/TSDoc 注释（TypeScript），用中文描述其用途**
+- 私有成员如果逻辑不明显也应添加注释
+- 不要写多余的"翻译代码"注释（如 `// 返回结果`），只解释"为什么"而非"是什么"
+- 保持代码整洁，遵循各语言的命名规范
+
+## 技术栈
+
+- .NET 10 (LTS)，核心库目标 netstandard2.0
+- Vue 3.5 + Vite 8 + TypeScript
+- Tauri v2
+- SignalR + MessagePack 二进制协议
+- pnpm workspace 管理前端包

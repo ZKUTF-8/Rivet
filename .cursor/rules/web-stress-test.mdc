@@ -1,0 +1,25 @@
+---
+description: stress-test — 压测应用编码规则
+globs: src/web/apps/stress-test/**/*.{vue,ts}
+alwaysApply: false
+---
+
+# stress-test 压测应用编码规则
+
+## 项目定位
+
+压测应用是一个 Vue 3 + Vite 8 单页应用，用于验证 Rivet 框架的 SignalR 通信性能：
+
+- 可配置变量数量（1 ~ 10000）、更新频率（5ms ~ 2000ms）
+- 支持批量推送 vs 逐个推送对比
+- 支持 MessagePack vs JSON 协议实时切换
+- 实时展示延迟（平均/P95/P99）、FPS、吞吐量等指标
+
+## 编码要求
+
+- 使用 `<script setup lang="ts">` 语法
+- 组件 props 使用 `defineProps<T>()` 泛型定义
+- 组件事件使用 `defineEmits<T>()` 泛型定义
+- 样式使用 `<style scoped>`，暗色主题（GitHub Dark 风格）
+- 通过 `@rivet/client` 包（workspace 引用）与后端通信，不直接使用 SignalR API
+- 所有组件导出和重要函数使用中文注释说明

@@ -1,0 +1,11 @@
+{
+  "name": "rivet-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter stress-test dev",
+    "build": "pnpm --filter stress-test build",
+    "dev:client": "pnpm --filter @rivet/client dev"
+  }
+}
