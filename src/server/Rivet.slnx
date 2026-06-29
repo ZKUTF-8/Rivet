@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="core/rivet.core/Rivet.Core.csproj" />
+  <Project Path="core/rivet.generator/Rivet.Generator.csproj" />
+  <Project Path="apps/rivet.stress.test.server/Rivet.StressTest.Server.csproj" />
+</Solution>

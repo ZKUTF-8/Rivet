@@ -23,10 +23,16 @@ Rivet 是一个 **.NET + Vue 上位机快速开发框架**，核心理念：
 ## 项目结构
 
 ```
-src/backend/    → .NET 后端（Rivet.Core / Rivet.Generator / Rivet.DevApp）
-src/web/        → 前端 pnpm workspace（@rivet/client 包 + 应用）
-src/tauri/      → Tauri v2 桌面壳子
+src/server/     → .NET 本地服务层（核心库 / Source Generator / 业务或压测服务）
+src/web/        → 前端 pnpm workspace（前端核心包 / 业务或压测应用 / shell CLI 包）
+src/shell/      → 桌面壳层（Tauri 壳模板或可复用壳工程）
 ```
+
+当前阶段采用单仓库组织：核心封装库和实际业务/压测项目放在同一个仓库内，通过本地项目引用或 workspace 引用协作。等 API 和工程形态稳定后，再将核心库剥离为 NuGet 包、npm 包和 Tauri 模板。
+
+前端业务代码访问后端的全局对象统一命名为 `rv`。
+
+目录命名统一使用小写加点号，例如 `rivet.core`、`rivet.stress.test.server`、`mysoow.toolkit`。各语言内部包名遵守本语言生态：C# 项目和命名空间使用 PascalCase，Rust crate 使用 snake_case，npm 包名按 npm 规范命名。
 
 ## 编码规范
 

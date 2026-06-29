@@ -1,10 +1,10 @@
 ---
-description: stress-test — 压测应用编码规则
-globs: src/web/apps/stress-test/**/*.{vue,ts}
+description: rivet.stress.test — 压测应用编码规则
+globs: src/web/apps/rivet.stress.test/**/*.{vue,ts}
 alwaysApply: false
 ---
 
-# stress-test 压测应用编码规则
+# rivet.stress.test 压测应用编码规则
 
 ## 项目定位
 
@@ -20,6 +20,6 @@ alwaysApply: false
 - 使用 `<script setup lang="ts">` 语法
 - 组件 props 使用 `defineProps<T>()` 泛型定义
 - 组件事件使用 `defineEmits<T>()` 泛型定义
-- 样式使用 `<style scoped>`，暗色主题（GitHub Dark 风格）
-- 通过 `@rivet/client` 包（workspace 引用）与后端通信，不直接使用 SignalR API
+- 样式优先沿用现有浅色工程工具风格；不要强行改成暗色主题
+- 通过前端核心通信层（当前可为 `@rivet/client` workspace 引用，后续也可迁移为 `src/web/core` 本地引用）与后端通信，避免业务组件直接散落 SignalR 细节
 - 所有组件导出和重要函数使用中文注释说明

@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="Rivet.Core/Rivet.Core.csproj" />
-  <Project Path="Rivet.DevApp/Rivet.DevApp.csproj" />
-  <Project Path="Rivet.Generator/Rivet.Generator.csproj" />
-</Solution>

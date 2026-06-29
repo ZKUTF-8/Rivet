@@ -53,6 +53,8 @@ dist-ssr/
 
 # TypeScript
 *.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # 自动生成的 TS 代理（Source Generator 产出）
 # generated/*.ts
@@ -71,6 +73,7 @@ dist-ssr/
 # ===========================
 target/
 Cargo.lock
+!src/shell/core/rivet.shell/Cargo.lock
 **/*.rs.bk
 
 # ===========================

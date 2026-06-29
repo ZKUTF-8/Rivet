@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter stress-test dev",
-    "build": "pnpm --filter stress-test build",
+    "dev": "pnpm --filter rivet.stress.test dev",
+    "dev:shell": "pnpm --filter rivet.stress.test dev:shell",
+    "build": "pnpm --filter rivet.stress.test build",
     "dev:client": "pnpm --filter @rivet/client dev"
   }
 }

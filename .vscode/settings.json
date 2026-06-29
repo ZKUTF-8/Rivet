@@ -96,7 +96,7 @@
         "editor.defaultFormatter": "rust-lang.rust-analyzer"
     },
     "[yaml]": {
-        "editor.tabSize": 2,
+        "editor.tabSize": 4,
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
     "[html]": {

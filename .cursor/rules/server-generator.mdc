@@ -1,0 +1,23 @@
+---
+description: Rivet.Generator — Source Generator 编码规则
+globs: src/server/core/rivet.generator/**/*.cs
+alwaysApply: false
+---
+
+# Rivet.Generator 编码规则
+
+## 项目定位
+
+Rivet.Generator 是 Roslyn Source Generator 项目，目标框架 `netstandard2.0`（Roslyn 要求）。职责：
+
+- 扫描标记了 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 的成员
+- 编译时自动生成 SignalR Hub 方法（C#）
+- 编译时自动生成 TypeScript 类型定义和代理函数
+
+## 编码要求
+
+- 使用 `IIncrementalGenerator`（增量生成器），不要用废弃的 `ISourceGenerator`
+- 生成的代码必须放在独立的 `partial class` 中，避免与用户代码冲突
+- 生成的 C# 代码添加 `[GeneratedCode]` 标记
+- 所有公开类和方法使用 XML 文档注释，中文说明
+- 当前阶段此项目为占位，核心逻辑待实现
