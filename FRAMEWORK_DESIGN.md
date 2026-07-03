@@ -42,8 +42,8 @@ src/
 后期包形态建议拆成：
 
 - `Rivet.Core` / `Rivet.Hosting` / `Rivet.Generator`：NuGet 包，服务端业务引用。
-- `@rivet/client`：npm 包，前端业务运行时引用，提供连接管理和 `rv` 对象。
-- `@rivet/shell`：npm 工具包，提供 `rivet-shell` CLI，业务前端在 package scripts 中调用。
+- `@rivet/client`：npm 包，前端业务运行时引用，提供连接管理和 `rv` 对象。不使用桌面壳时，业务前端只依赖这个包即可。
+- `@rivet/shell`：npm 工具包，提供统一的 `rivet` CLI，业务前端需要桌面壳或打包桌面程序时再引入。它可以依赖 `@rivet/client`，但业务代码如果直接 `import '@rivet/client'`，仍建议显式声明 `@rivet/client`。
 
 浏览器开发模式只需要启动服务和前端：
 
@@ -58,7 +58,9 @@ pnpm dev    # 业务 web
 pnpm dev:shell
 ```
 
-这个命令由业务前端项目自己的脚本编排：先启动本业务的 Vite dev server，确认 `devUrl` 可访问后，再调用 `@rivet/shell` 提供的 `rivet-shell dev` 启动 Tauri 壳。`@rivet/shell` 不负责启动前端业务，只负责壳子能力。开发阶段可以不自动拉起 server，开发者手动启动服务；打包阶段再根据配置发布 server、复制 sidecar、生成 Tauri 配置并构建桌面程序。
+这个命令由 `@rivet/shell` 提供的 `rivet dev --shell` 编排：先启动本业务的 Vite dev server，确认 `devUrl` 可访问后，再启动 Tauri 壳。业务项目只保留简单的 package scripts，框架配置集中写在 `vite.config.ts` 的 `rivet` 字段里，用于配置前端端口、后端进程、打包命令和 sidecar 参数。开发阶段可以不自动拉起 server，开发者手动启动服务；打包阶段再根据配置发布 server、复制 sidecar、生成 Tauri 配置并构建桌面程序。
+
+`vite.config.ts` 是业务前端的配置入口。当前 `rivet` 字段先用于共享 Vite 端口、后端地址和壳子启动参数；后续 `@rivet/client` 如需读取这些配置，应通过 Vite 插件、虚拟模块或生成文件注入到浏览器代码中，而不是让浏览器运行时直接读取本地配置文件。
 
 ## 代码生成归属
 

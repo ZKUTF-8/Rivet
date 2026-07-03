@@ -55,6 +55,8 @@ dist-ssr/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+rivet.config.js
+rivet.config.d.ts
 
 # 自动生成的 TS 代理（Source Generator 产出）
 # generated/*.ts

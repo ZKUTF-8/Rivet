@@ -1,9 +1,17 @@
 {
-  "name": "@rivet/shell",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "bin": {
-    "rivet-shell": "./cli/rivet-shell.js"
-  }
+    "name": "@rivet/shell",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "exports": {
+        "./client": "./src/client.ts",
+        "./config": "./src/config.ts"
+    },
+    "bin": {
+        "rivet": "./cli/rivet.js",
+        "rivet-shell": "./cli/rivet.js"
+    },
+    "dependencies": {
+        "@rivet/client": "workspace:*"
+    }
 }

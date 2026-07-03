@@ -65,16 +65,37 @@ pnpm -v
 }
 ```
 
-开发模式下，Tauri 会加载 `http://localhost:9720`。因此需要先启动前端：
+开发模式下，Tauri 会加载 `http://localhost:9720`。业务前端可以直接通过统一 CLI 启动浏览器模式：
 
 ```powershell
 pnpm --dir src\web --filter rivet.stress.test dev
 ```
 
-然后在另一个终端启动壳子：
+也可以通过统一 CLI 启动壳子模式，它会先启动 Vite，再启动 Tauri 壳：
 
 ```powershell
-cargo tauri dev --manifest-path src\shell\core\rivet.shell\Cargo.toml
+pnpm --dir src\web --filter rivet.stress.test dev:shell
+```
+
+业务前端可以在 `vite.config.ts` 的 `rivet` 字段里配置这些默认值：
+
+```ts
+import { defineConfig } from 'vite'
+import { resolveRivetConfig } from '@rivet/shell/config'
+
+const rivet = resolveRivetConfig({
+    web: { port: 9720 },
+    server: { url: 'http://localhost:9710', bridgePath: '/bridge' },
+    shell: { enabled: true },
+})
+
+export default defineConfig({
+    rivet,
+    server: {
+        host: rivet.web.host,
+        port: rivet.web.port,
+    },
+})
 ```
 
 如果前端需要连接后端压测服务，还需要手动启动 server：
@@ -105,13 +126,13 @@ cargo tauri --version
 
 ```text
 web/apps/mysoow.toolkit
-  package.json scripts 先启动业务前端，再调用 @rivet/shell
-  rivet.config.ts 配置前端 devUrl、dist、server 发布命令和 sidecar 参数
+  package.json scripts 调用 rivet CLI
+  vite.config.ts 的 rivet 字段配置前端 devUrl、dist、server 发布命令和 sidecar 参数
 
 @rivet/shell
   读取配置
   生成或复用 Tauri 壳模板
-  启动 Tauri dev，加载业务前端已经启动好的 devUrl
+  启动 Vite 和 Tauri dev，加载业务前端 devUrl
   打包时发布 server 并构建桌面应用
 ```
 

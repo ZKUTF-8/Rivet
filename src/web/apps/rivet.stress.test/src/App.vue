@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from 'vue'
-import { createConnection, type RivetConnection, type Protocol } from '@rivet/client'
+import { createStressConnection, type StressConnection, type Protocol } from './stressConnection'
 import ControlPanel from './components/ControlPanel.vue'
 import VariableGrid from './components/VariableGrid.vue'
 import MetricsPanel from './components/MetricsPanel.vue'
@@ -23,7 +23,7 @@ const WARMUP_SEC = 3
 const COLLECT_SEC = 15
 
 // ─── 连接状态 ───
-const conn = ref<RivetConnection | null>(null)
+const conn = ref<StressConnection | null>(null)
 const protocol = ref<Protocol>('msgpack')
 const connected = ref(false)
 const variables = ref<Record<string, any>>({})
@@ -110,7 +110,7 @@ function sleep(ms: number): Promise<void> {
 
 // ─── 连接管理 ───
 async function connect() {
-    const c = createConnection({ url: BACKEND_URL, protocol: protocol.value })
+    const c = createStressConnection({ url: BACKEND_URL, protocol: protocol.value })
     conn.value = c
 
     c.connection.on('VariableBatchUpdate', (raw: any) => {
