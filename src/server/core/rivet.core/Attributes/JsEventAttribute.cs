@@ -11,4 +11,8 @@ namespace Rivet.Core.Attributes;
 [AttributeUsage(AttributeTargets.Event, Inherited = false, AllowMultiple = false)]
 public sealed class JsEventAttribute : Attribute
 {
+    /// <summary>
+    /// 暴露给前端的事件名称。不设置时使用 C# 事件名称。
+    /// </summary>
+    public string? Name { get; set; }
 }

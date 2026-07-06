@@ -9,9 +9,14 @@ namespace Rivet.Core.Attributes;
 ///   - Hub 方法，用于接收前端发来的属性修改
 ///   - TypeScript 响应式绑定（Vue ref）
 /// </summary>
-[AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
 public sealed class JsBindableAttribute : Attribute
 {
+    /// <summary>
+    /// 暴露给前端的变量名称。不设置时使用字段或属性名称。
+    /// </summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// 向前端推送更新的节流间隔（毫秒）。
     /// 设为 0 表示每次变更都立即推送。

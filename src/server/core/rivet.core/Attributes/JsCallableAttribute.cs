@@ -9,4 +9,8 @@ namespace Rivet.Core.Attributes;
 [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
 public sealed class JsCallableAttribute : Attribute
 {
+    /// <summary>
+    /// 暴露给前端的方法名称。不设置时使用 C# 方法名称。
+    /// </summary>
+    public string? Name { get; set; }
 }

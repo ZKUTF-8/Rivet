@@ -43,6 +43,47 @@ rv.device.onDataReceived.listen((data) => { /* ... */ })
 </template>
 ```
 
+## 当前验证项目
+
+仓库内已经拆出一个真实业务样板 `Mysoow.Toolkit`，用于验证应用层是否可以只关心业务代码：
+
+- 后端：`src/server/apps/mysoow.toolkit.server`
+- 前端：`src/web/apps/mysoow.toolkit`
+- 壳子：复用 `src/shell/core/rivet.shell`
+
+启动后端：
+
+```powershell
+dotnet run --project src/server/apps/mysoow.toolkit.server/Mysoow.Toolkit.Server.csproj
+```
+
+后端入口使用 ASP.NET Core 原生宿主，Rivet 只是注入进去：
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.AddRivet(rivet =>
+{
+    rivet.UseApplication<ToolkitService>();
+});
+
+var app = builder.Build();
+app.MapRivet();
+await app.RunAsync();
+```
+
+启动前端浏览器模式：
+
+```powershell
+pnpm --dir src/web --filter mysoow.toolkit dev
+```
+
+启动前端壳子模式：
+
+```powershell
+pnpm --dir src/web --filter mysoow.toolkit dev:shell
+```
+
 ## 许可证
 
 - **开源使用**：[AGPL-3.0](./LICENSE) — 个人学习、开源项目免费使用
