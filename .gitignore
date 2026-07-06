@@ -50,6 +50,7 @@ dist-ssr/
 # Vite
 *.sw?
 .vite/
+.rivet/
 
 # TypeScript
 *.tsbuildinfo

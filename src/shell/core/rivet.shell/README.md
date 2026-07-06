@@ -54,7 +54,7 @@ pnpm -v
 
 ## 启动方式
 
-当前壳子的 `tauri.conf.json` 配置：
+当前壳子的 `tauri.conf.json` 保留默认开发地址：
 
 ```json
 {
@@ -65,7 +65,9 @@ pnpm -v
 }
 ```
 
-开发模式下，Tauri 会加载 `http://localhost:9720`。业务前端可以直接通过统一 CLI 启动浏览器模式：
+直接在壳子目录运行 `cargo tauri dev` 时，Tauri 会加载这个默认地址。业务前端通过 `@rivet/shell` 启动时，CLI 会根据业务项目的 `vite.config.ts` 生成 `.rivet/tauri.dev.conf.json`，并通过 `cargo tauri dev --config` 覆盖 `devUrl` 和 `frontendDist`。
+
+业务前端可以直接通过统一 CLI 启动浏览器模式：
 
 ```powershell
 pnpm --dir src\web --filter rivet.stress.test dev
@@ -77,23 +79,26 @@ pnpm --dir src\web --filter rivet.stress.test dev
 pnpm --dir src\web --filter rivet.stress.test dev:shell
 ```
 
-业务前端可以在 `vite.config.ts` 的 `rivet` 字段里配置这些默认值：
+业务前端可以在 `vite.config.ts` 的 `rivet` 字段里配置这些默认值。通常只需要保留标准 Vite 配置，Rivet 会从 `server.host`、`server.port`、`server.proxy` 和 `build.outDir` 推导：
 
 ```ts
 import { defineConfig } from 'vite'
-import { resolveRivetConfig } from '@rivet/shell/config'
-
-const rivet = resolveRivetConfig({
-    web: { port: 9720 },
-    server: { url: 'http://localhost:9710', bridgePath: '/bridge' },
-    shell: { enabled: true },
-})
 
 export default defineConfig({
-    rivet,
     server: {
-        host: rivet.web.host,
-        port: rivet.web.port,
+        host: '127.0.0.1',
+        port: 9720,
+        proxy: {
+            '/bridge': {
+                target: 'http://localhost:9710',
+                ws: true,
+            },
+        },
+    },
+    rivet: {
+        shell: {
+            enabled: true,
+        },
     },
 })
 ```

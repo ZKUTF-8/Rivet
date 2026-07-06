@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -22,9 +22,9 @@ const vite = await loadProjectVite(cwd);
 const viteConfigPath = resolveViteConfigPath(cwd, options.config);
 const viteConfig = await loadViteConfig(vite, cwd, viteConfigPath);
 const config = resolveRivetConfig(viteConfig.rivet, viteConfig);
-const webUrl = options.webUrl ?? process.env.RIVET_WEB_DEV_URL ?? config.web.devUrl;
 const webPort = options.port ?? String(config.web.port);
 const webHost = options.host ?? config.web.host;
+const webUrl = resolveWebDevUrl(options, config, webHost, webPort);
 
 if (options.shell) {
     await runDevWithShell(vite, viteConfigPath, webUrl, webHost, webPort, config);
@@ -153,10 +153,11 @@ async function runDevWithShell(viteModule, viteConfigPath, webUrl, webHost, webP
         ? path.resolve(cwd, config.shell.cargoManifestPath)
         : path.join(shellRoot, "Cargo.toml");
     const cargoCwd = path.dirname(cargoManifestPath);
+    const tauriConfigPath = writeTauriDevConfig(cwd, webUrl, config);
 
     const shell = spawnChild(
         resolveCargoCommand(),
-        ["tauri", "dev", ...config.shell.args],
+        ["tauri", "dev", "--config", tauriConfigPath, ...config.shell.args],
         {
             cwd: cargoCwd,
             env: {
@@ -193,6 +194,56 @@ async function runDevWithShell(viteModule, viteConfigPath, webUrl, webHost, webP
         shell.kill();
         void shutdown(143);
     });
+}
+
+/** 根据 CLI 参数和 Rivet 配置得到壳子实际加载的前端地址。 */
+function resolveWebDevUrl(parsedOptions, config, webHost, webPort) {
+    if (parsedOptions.webUrl) {
+        return parsedOptions.webUrl;
+    }
+
+    if (process.env.RIVET_WEB_DEV_URL) {
+        return process.env.RIVET_WEB_DEV_URL;
+    }
+
+    if (parsedOptions.host || parsedOptions.port) {
+        return `http://${toBrowserHost(webHost)}:${webPort}`;
+    }
+
+    return config.web.devUrl;
+}
+
+/** 写入 Tauri dev 临时配置，让业务项目端口和 dist 真正传给壳子。 */
+function writeTauriDevConfig(projectCwd, webUrl, config) {
+    const rivetDir = path.join(projectCwd, ".rivet");
+    mkdirSync(rivetDir, { recursive: true });
+
+    const configPath = path.join(rivetDir, "tauri.dev.conf.json");
+    const tauriConfig = {
+        build: {
+            devUrl: webUrl,
+            frontendDist: toTauriPath(path.resolve(projectCwd, config.web.dist)),
+            beforeDevCommand: "",
+            beforeBuildCommand: "",
+        },
+    };
+
+    writeFileSync(configPath, `${JSON.stringify(tauriConfig, null, 4)}\n`, "utf8");
+    return configPath;
+}
+
+/** 将监听地址转换成浏览器可访问地址。 */
+function toBrowserHost(host) {
+    if (host === "0.0.0.0" || host === "::") {
+        return "localhost";
+    }
+
+    return host;
+}
+
+/** Tauri 配置中的路径统一使用正斜杠，避免 Windows 反斜杠转义干扰。 */
+function toTauriPath(value) {
+    return value.replaceAll("\\", "/");
 }
 
 /** 给非壳子模式绑定退出清理。 */

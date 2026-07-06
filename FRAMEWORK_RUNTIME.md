@@ -144,17 +144,40 @@ src/shell/core/rivet.shell/Cargo.toml
 
 ## 参数如何传给壳子
 
-当前 CLI 通过环境变量把运行时信息传给 Tauri 进程：
+当前 CLI 会在业务项目目录下生成临时 Tauri 配置：
 
 ```text
-RIVET_WEB_DEV_URL    壳子需要加载的前端地址
+.rivet/tauri.dev.conf.json
+```
+
+然后通过 Tauri CLI 的 `--config` 参数合并到内置壳子的 `tauri.conf.json`：
+
+```text
+cargo tauri dev --config .rivet/tauri.dev.conf.json
+```
+
+临时配置当前写入：
+
+```json
+{
+    "build": {
+        "devUrl": "业务项目实际 devUrl",
+        "frontendDist": "业务项目实际 dist 目录",
+        "beforeDevCommand": "",
+        "beforeBuildCommand": ""
+    }
+}
+```
+
+这样 `vite.config.ts` 中的 `server.port`、`server.host`、`rivet.web.devUrl` 和 `rivet.web.dist` 会真实影响 Tauri 壳子加载的前端地址，而不是继续使用内置壳子 `tauri.conf.json` 里的固定默认值。
+
+CLI 仍会把下面这些信息作为环境变量传给 Tauri 进程，后续可供 Rust 侧或 sidecar 逻辑读取：
+
+```text
+RIVET_WEB_DEV_URL    壳子加载的前端地址
 RIVET_SERVER_URL     后端服务根地址
 RIVET_BRIDGE_PATH    SignalR Bridge Hub 路径
 ```
-
-也就是说，参数不是直接写死在 Tauri 壳子里，而是在启动 Tauri 进程时由 `@rivet/shell` 注入。
-
-这类参数适合表达“本次运行时的外部环境”，例如前端端口、后端地址、后端 Hub 路径。后续如果要传后端进程路径、sidecar 参数、打包输出目录，也应该继续走统一配置解析，再在启动或打包阶段显式传递。
 
 ## 进程关系
 
@@ -207,9 +230,7 @@ startVite()
 
 ```text
 runDevWithShell()
-RIVET_WEB_DEV_URL
-RIVET_SERVER_URL
-RIVET_BRIDGE_PATH
+.rivet/tauri.dev.conf.json
 src/shell/core/rivet.shell/tauri.conf.json
 ```
 
@@ -217,8 +238,7 @@ src/shell/core/rivet.shell/tauri.conf.json
 
 当前文档描述的是开发阶段机制。下面这些能力后续还需要继续明确：
 
-- Tauri 壳子如何正式读取并使用 `RIVET_WEB_DEV_URL`。
-- 打包阶段如何构建业务前端并写入 Tauri 配置。
+- 打包阶段如何构建业务前端并生成 Tauri build 配置。
 - 后端进程如何配置、发布、作为 sidecar 随壳子一起打包。
 - `rivet dev` 是否最终替代业务项目直接使用 `vite`。
 - 是否增加 `rivet dev --debug` 输出最终解析后的运行配置。
