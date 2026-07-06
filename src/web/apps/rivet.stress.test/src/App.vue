@@ -5,6 +5,7 @@ import ControlPanel from './components/ControlPanel.vue'
 import VariableGrid from './components/VariableGrid.vue'
 import MetricsPanel from './components/MetricsPanel.vue'
 import BenchmarkReport from './components/BenchmarkReport.vue'
+import PerformanceDiagnostics from './components/PerformanceDiagnostics.vue'
 
 const BACKEND_URL = 'http://localhost:9710/bridge'
 
@@ -29,6 +30,7 @@ const protocol = ref<Protocol>('msgpack')
 const connected = ref(false)
 const variables = ref<Record<string, any>>({})
 const batchCount = ref(0)
+const controlMode = ref<'preset' | 'custom' | 'diagnostics'>('preset')
 
 // ─── 实时指标 ───
 const latencies = ref<number[]>([])
@@ -115,6 +117,16 @@ function calcMax(arr: number[]): number {
 
 function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function setControlMode(mode: 'preset' | 'custom' | 'diagnostics') {
+    if (mode === 'diagnostics' && running.value) {
+        await stopTest()
+    }
+    controlMode.value = mode
+    if (mode === 'diagnostics') {
+        showReport.value = false
+    }
 }
 
 // ─── 连接管理 ───
@@ -383,14 +395,18 @@ onUnmounted(() => {
         <main class="app-main">
             <aside class="sidebar">
                 <ControlPanel :connected="connected" :protocol="protocol" :write-enabled="writeEnabled"
-                    :running="running" :benchmark-running="benchmarkRunning" :total-benchmark-sec="estimatedTotalSec"
-                    :benchmark-progress="benchmarkProgress" @connect="connect" @disconnect="disconnect"
+                    :running="running" :mode="controlMode" :benchmark-running="benchmarkRunning"
+                    :total-benchmark-sec="estimatedTotalSec" :benchmark-progress="benchmarkProgress"
+                    @connect="connect" @disconnect="disconnect" @mode-change="setControlMode"
                     @start="startTest" @stop="stopTest" @update-config="updateConfig" @switch-protocol="switchProtocol"
                     @start-benchmark="runBenchmark" @cancel-benchmark="cancelBenchmark" />
             </aside>
 
             <section class="content">
-                <BenchmarkReport v-if="showReport" :results="benchmarkResults" :protocol="protocol"
+                <PerformanceDiagnostics v-if="controlMode === 'diagnostics'" :connected="connected"
+                    :connection="conn?.connection ?? null" />
+
+                <BenchmarkReport v-else-if="showReport" :results="benchmarkResults" :protocol="protocol"
                     @close="showReport = false" />
 
                 <div v-else class="content-inner">

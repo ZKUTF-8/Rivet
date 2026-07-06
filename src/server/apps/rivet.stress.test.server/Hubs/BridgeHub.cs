@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Rivet.StressTest.Server.Services;
+using System.Diagnostics;
 
 namespace Rivet.StressTest.Server.Hubs;
 
@@ -9,6 +10,9 @@ namespace Rivet.StressTest.Server.Hubs;
 /// </summary>
 public class BridgeHub : Hub
 {
+    private const int MaxBandwidthTestSizeInMB = 100;
+    private static readonly Stopwatch Stopwatch = Stopwatch.StartNew();
+    private static readonly SemaphoreSlim BandwidthTestLock = new(1, 1);
     private readonly StressTestService _stressTest;
 
     public BridgeHub(StressTestService stressTest)
@@ -71,6 +75,52 @@ public class BridgeHub : Hub
             ServerTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             Success = true
         };
+    }
+
+    /// <summary>
+    /// 获取服务端当前时间，用于验证前后端调用链路是否正常。
+    /// </summary>
+    public string GetCurrentTime()
+    {
+        var now = DateTime.Now;
+        var microseconds = Stopwatch.Elapsed.TotalMilliseconds % 1 * 1000;
+        return $"{now:yyyy-MM-dd HH:mm:ss.fff}.{microseconds:000}";
+    }
+
+    /// <summary>
+    /// 轻量延迟测试方法，前端用本地高精度计时计算 RTT。
+    /// </summary>
+    public double PingTest(double clientTimestamp)
+    {
+        return Stopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    /// <summary>
+    /// 最小负载回显方法，用于串行和并发吞吐量测试。
+    /// </summary>
+    public bool ThroughputTest()
+    {
+        return true;
+    }
+
+    /// <summary>
+    /// 返回指定大小的数据块，用于测试服务端到前端的传输带宽。
+    /// </summary>
+    public async Task<byte[]> BandwidthTest(int sizeInMB)
+    {
+        var safeSizeInMB = Math.Clamp(sizeInMB, 1, MaxBandwidthTestSizeInMB);
+
+        await BandwidthTestLock.WaitAsync(Context.ConnectionAborted);
+        try
+        {
+            var data = new byte[safeSizeInMB * 1024 * 1024];
+            Random.Shared.NextBytes(data);
+            return data;
+        }
+        finally
+        {
+            BandwidthTestLock.Release();
+        }
     }
 
     /// <summary>

@@ -7,6 +7,7 @@ const props = defineProps<{
     protocol: Protocol
     writeEnabled: boolean
     running: boolean
+    mode: 'preset' | 'custom' | 'diagnostics'
     benchmarkRunning: boolean
     totalBenchmarkSec: number
     benchmarkProgress: {
@@ -25,6 +26,7 @@ const emit = defineEmits<{
     stop: []
     updateConfig: [config: { variableCount: number; updateIntervalMs: number; writeIntervalMs: number; useBatchMode: boolean }]
     switchProtocol: [protocol: Protocol]
+    modeChange: [mode: 'preset' | 'custom' | 'diagnostics']
     startBenchmark: []
     cancelBenchmark: []
 }>()
@@ -33,7 +35,6 @@ const variableCount = ref(100)
 const updateIntervalMs = ref(100)
 const writeIntervalMs = ref(50)
 const useBatchMode = ref(true)
-const customMode = ref(false)
 const selectedScenarioIndex = ref(0)
 
 const scenarios = [
@@ -64,11 +65,15 @@ const totalEstimate = computed(() => {
 
 const selectedScenario = computed(() => scenarios[selectedScenarioIndex.value])
 
-const selectedScenarioStats = computed(() => [
-    { label: '变量', value: selectedScenario.value.variableCount.toLocaleString() },
-    { label: '推送', value: `${selectedScenario.value.updateIntervalMs}ms` },
-    { label: '写入', value: `${writeIntervalMs.value}ms` },
-    { label: '模式', value: '批量' },
+const selectedScenarioDescription = computed(() =>
+    `后端生成 ${selectedScenario.value.variableCount.toLocaleString()} 个变量，每隔 ${selectedScenario.value.updateIntervalMs}ms 向页面批量推送一次。前端每隔 ${writeIntervalMs.value}ms 随机更改一个变量并写回后端。`
+)
+
+const customDescriptions = computed(() => [
+    `变量：后端模拟生成的变量数量，数量越多，页面渲染和数据同步压力越大。`,
+    `推送：后端向前端推送一轮变量数据的间隔，数值越小，推送越频繁。`,
+    `写入：前端向后端写入一个变量值的间隔，用来模拟用户修改参数。`,
+    `批量：开启后会把一轮变量合并成一条消息推送，关闭后逐个变量推送。`,
 ])
 
 function handleStart() {
@@ -86,7 +91,7 @@ function handleApply() {
 }
 
 function getConfig() {
-    if (customMode.value) {
+    if (props.mode === 'custom') {
         return {
             variableCount: variableCount.value,
             updateIntervalMs: updateIntervalMs.value,
@@ -142,16 +147,20 @@ function handleRunScenario(i: number) {
         <template v-else>
             <!-- 模式切换标签 -->
             <div class="mode-tabs">
-                <button class="mode-tab" :class="{ active: !customMode }" @click="customMode = false">
+                <button class="mode-tab" :class="{ active: mode === 'preset' }" @click="$emit('modeChange', 'preset')">
                     预设方案
                 </button>
-                <button class="mode-tab" :class="{ active: customMode }" @click="customMode = true">
+                <button class="mode-tab" :class="{ active: mode === 'custom' }" @click="$emit('modeChange', 'custom')">
                     自定义
+                </button>
+                <button class="mode-tab" :class="{ active: mode === 'diagnostics' }"
+                    @click="$emit('modeChange', 'diagnostics')">
+                    诊断测试
                 </button>
             </div>
 
             <!-- 预设方案列表 -->
-            <template v-if="!customMode">
+            <template v-if="mode === 'preset'">
                 <div class="ctrl-section">
                     <div class="scenario-list">
                         <label v-for="(s, i) in scenarios" :key="i" class="scenario-item"
@@ -172,17 +181,14 @@ function handleRunScenario(i: number) {
                         <span>{{ selectedScenario.label }}</span>
                         <strong>{{ selectedScenario.desc }}</strong>
                     </div>
-                    <div class="preview-grid">
-                        <div v-for="item in selectedScenarioStats" :key="item.label" class="preview-stat">
-                            <span>{{ item.label }}</span>
-                            <strong>{{ item.value }}</strong>
-                        </div>
+                    <div class="preview-description">
+                        {{ selectedScenarioDescription }}
                     </div>
                 </div>
             </template>
 
             <!-- 自定义参数 -->
-            <template v-else>
+            <template v-else-if="mode === 'custom'">
                 <div class="ctrl-section">
                     <div class="param-row">
                         <span class="param-label">变量</span>
@@ -210,17 +216,35 @@ function handleRunScenario(i: number) {
                         </label>
                         <span class="param-val">{{ useBatchMode ? '开' : '关' }}</span>
                     </div>
+                    <div class="custom-help">
+                        <p v-for="text in customDescriptions" :key="text">{{ text }}</p>
+                    </div>
+                </div>
+            </template>
+
+            <template v-else>
+                <div class="ctrl-section diagnostics-preview">
+                    <div class="diag-preview-title">SignalR 诊断测试</div>
+                    <div class="diag-preview-text">
+                        右侧可测试调用延迟、串行吞吐、并发吞吐和 100MB 服务端下行带宽。
+                    </div>
+                    <div class="diag-preview-grid">
+                        <span>延迟</span>
+                        <span>吞吐</span>
+                        <span>并发</span>
+                        <span>带宽</span>
+                    </div>
                 </div>
             </template>
 
             <!-- 操作按钮 -->
-            <div class="ctrl-actions">
+            <div v-if="mode !== 'diagnostics'" class="ctrl-actions">
                 <template v-if="props.running">
                     <button class="btn btn-danger btn-block" @click="handleStop">停止压测</button>
                     <button class="btn btn-outline btn-block btn-sm" @click="handleApply">应用参数</button>
                 </template>
                 <template v-else>
-                    <template v-if="!customMode">
+                    <template v-if="mode === 'preset'">
                         <button class="btn btn-primary btn-block" :disabled="!connected" @click="handleStart">
                             运行选中方案
                         </button>
@@ -454,33 +478,65 @@ function handleRunScenario(i: number) {
     color: #6b7280;
 }
 
-.preview-grid {
+.preview-description {
+    color: #4b5563;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.custom-help {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.custom-help p {
+    color: #4b5563;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.diagnostics-preview {
+    padding: 12px;
+    background: #f6f8fa;
+    border-radius: 6px;
+    border: 1px solid #d8dee4;
+}
+
+.diag-preview-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2328;
+    margin-bottom: 6px;
+}
+
+.diag-preview-text {
+    font-size: 12px;
+    line-height: 1.55;
+    color: #57606a;
+    margin-bottom: 10px;
+}
+
+.diag-preview-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
 }
 
-.preview-stat {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 8px;
+.diag-preview-grid span {
+    padding: 5px 8px;
+    text-align: center;
     background: #fff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #d8dee4;
     border-radius: 5px;
-}
-
-.preview-stat span {
-    font-size: 11px;
-    color: #6b7280;
-}
-
-.preview-stat strong {
+    color: #374151;
     font-size: 12px;
     font-weight: 650;
-    color: #111827;
-    font-variant-numeric: tabular-nums;
 }
 
 /* ---- 开关 ---- */
