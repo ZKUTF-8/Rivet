@@ -10,17 +10,18 @@ const BACKEND_URL = 'http://localhost:9710/bridge'
 
 // ─── 基准测试场景定义 ───
 const BENCHMARK_SCENARIOS = [
-    { label: '轻量 10变量', variableCount: 10, updateIntervalMs: 500, useBatchMode: true },
-    { label: '适中 50变量', variableCount: 50, updateIntervalMs: 200, useBatchMode: true },
-    { label: '中等 100变量', variableCount: 100, updateIntervalMs: 100, useBatchMode: true },
-    { label: '较多 200变量', variableCount: 200, updateIntervalMs: 100, useBatchMode: true },
-    { label: '压力 500变量', variableCount: 500, updateIntervalMs: 50, useBatchMode: true },
-    { label: '高压 1000变量', variableCount: 1000, updateIntervalMs: 50, useBatchMode: true },
-    { label: '极限 2000变量', variableCount: 2000, updateIntervalMs: 20, useBatchMode: true },
-    { label: '暴力 5000变量', variableCount: 5000, updateIntervalMs: 10, useBatchMode: true },
+    { label: '极轻量', variableCount: 10, updateIntervalMs: 500, useBatchMode: true },
+    { label: '轻量', variableCount: 50, updateIntervalMs: 300, useBatchMode: true },
+    { label: '中等', variableCount: 100, updateIntervalMs: 150, useBatchMode: true },
+    { label: '较重', variableCount: 500, updateIntervalMs: 75, useBatchMode: true },
+    { label: '压力', variableCount: 1000, updateIntervalMs: 40, useBatchMode: true },
+    { label: '高负载', variableCount: 2000, updateIntervalMs: 25, useBatchMode: true },
+    { label: '极限', variableCount: 3500, updateIntervalMs: 15, useBatchMode: true },
+    { label: '暴力', variableCount: 5000, updateIntervalMs: 10, useBatchMode: true },
 ]
-const WARMUP_SEC = 3
+const WARMUP_SEC = 5
 const COLLECT_SEC = 15
+const MANUAL_TEST_SEC = 20
 
 // ─── 连接状态 ───
 const conn = ref<StressConnection | null>(null)
@@ -35,6 +36,14 @@ const writeLatencies = ref<number[]>([])
 const fps = ref(0)
 let frameCount = 0
 let fpsTimer: ReturnType<typeof setInterval>
+
+// ─── 测试运行状态 ───
+const running = ref(false)
+const elapsedSeconds = ref(0)
+let elapsedTimer: ReturnType<typeof setInterval> | null = null
+const currentScenarioDesc = ref('')
+const estimatedTotalSec = ref(0)
+const manualTotalSec = ref(0)
 
 // ─── 写入测试 ───
 let writeTimer: ReturnType<typeof setInterval> | null = null
@@ -146,6 +155,13 @@ async function disconnect() {
     if (conn.value) {
         await conn.value.stop()
         connected.value = false
+        running.value = false
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null }
+        manualTotalSec.value = 0
+        variables.value = {}
+        batchCount.value = 0
+        latencies.value = []
+        writeLatencies.value = []
         conn.value = null
     }
 }
@@ -159,24 +175,53 @@ async function switchProtocol(p: Protocol) {
 }
 
 // ─── 手动压测 ───
-async function startTest(config: { variableCount: number; updateIntervalMs: number; useBatchMode: boolean }) {
+async function startTest(config: { variableCount: number; updateIntervalMs: number; writeIntervalMs: number; useBatchMode: boolean }) {
     if (!conn.value) return
+    running.value = true
+    elapsedSeconds.value = 0
     latencies.value = []
     writeLatencies.value = []
     batchCount.value = 0
     frameCount = 0
+    currentScenarioDesc.value = `${config.variableCount}个变量·每${config.updateIntervalMs}ms推送·每${config.writeIntervalMs}ms写入`
+    estimatedTotalSec.value = 0
+    manualTotalSec.value = MANUAL_TEST_SEC
+    elapsedTimer = setInterval(() => {
+        elapsedSeconds.value++
+        // 到达预估时间后自动停止
+        if (elapsedSeconds.value >= manualTotalSec.value) {
+            stopTest()
+        }
+    }, 1000)
     await conn.value.connection.invoke('StartStressTest', config.variableCount, config.updateIntervalMs, config.useBatchMode)
+    // 自动启动写入测试（前端→后端）
+    startWriteTest(config.writeIntervalMs)
 }
 
 async function stopTest() {
     if (!conn.value) return
+    running.value = false
+    if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null }
     stopWriteTest()
-    await conn.value.connection.invoke('StopStressTest')
+    manualTotalSec.value = 0
+    await stopRemoteStressTest()
 }
 
-async function updateConfig(config: { variableCount: number; updateIntervalMs: number; useBatchMode: boolean }) {
+async function stopRemoteStressTest() {
+    if (!conn.value) return
+    try {
+        await conn.value.connection.invoke('StopStressTest')
+    } catch { /* 连接可能已断开，忽略清理失败 */ }
+}
+
+async function updateConfig(config: { variableCount: number; updateIntervalMs: number; writeIntervalMs: number; useBatchMode: boolean }) {
     if (!conn.value) return
     await conn.value.connection.invoke('UpdateConfig', config.variableCount, config.updateIntervalMs, config.useBatchMode)
+    // 重启写入测试以应用新间隔
+    if (writeEnabled.value) {
+        stopWriteTest()
+        startWriteTest(config.writeIntervalMs)
+    }
 }
 
 // ─── 写入测试 ───
@@ -213,6 +258,8 @@ async function runBenchmark() {
 
     const scenarios = BENCHMARK_SCENARIOS
     benchmarkProgress.value.total = scenarios.length
+    // 每个场景：预热 + 采集 + 1s 间隔
+    estimatedTotalSec.value = scenarios.length * (WARMUP_SEC + COLLECT_SEC + 1)
 
     for (let i = 0; i < scenarios.length; i++) {
         if (benchmarkCancelled.value) break
@@ -233,7 +280,11 @@ async function runBenchmark() {
             benchmarkProgress.value.secondsLeft = sec + COLLECT_SEC
             await sleep(1000)
         }
-        if (benchmarkCancelled.value) break
+        if (benchmarkCancelled.value) {
+            await stopRemoteStressTest()
+            benchmarkCollector = null
+            break
+        }
 
         // 开始采集
         benchmarkCollector = []
@@ -245,6 +296,11 @@ async function runBenchmark() {
             benchmarkProgress.value.secondsLeft = sec
             fpsSnapshots.push(fps.value)
             await sleep(1000)
+        }
+        if (benchmarkCancelled.value) {
+            await stopRemoteStressTest()
+            benchmarkCollector = null
+            break
         }
 
         // 收集结果
@@ -264,11 +320,13 @@ async function runBenchmark() {
             totalBatches: batchesDuringCollection,
         })
 
-        await conn.value!.connection.invoke('StopStressTest')
+        await stopRemoteStressTest()
         await sleep(1000)
     }
 
     benchmarkRunning.value = false
+    estimatedTotalSec.value = 0
+    manualTotalSec.value = 0
     if (!benchmarkCancelled.value) {
         showReport.value = true
     }
@@ -294,31 +352,55 @@ onUnmounted(() => {
 
 <template>
     <div class="app">
-        <header class="app-header">
-            <h1>Rivet 压力测试</h1>
-            <div class="connection-status">
-                <span class="status-dot" :class="connected ? 'online' : 'offline'" />
-                <span>{{ connected ? '已连接' : '未连接' }}</span>
-                <span class="protocol-badge">{{ protocol.toUpperCase() }}</span>
+        <!-- 顶部工具栏：连接设置 -->
+        <header class="app-toolbar">
+            <div class="toolbar-left">
+                <h1>Rivet 压力测试</h1>
+            </div>
+            <div class="toolbar-center">
+                <div class="connection-controls">
+                    <button class="tb-btn" :class="connected ? 'tb-btn-danger' : 'tb-btn-primary'"
+                        @click="connected ? disconnect() : connect()">
+                        {{ connected ? '断开' : '连接' }}
+                    </button>
+                    <div class="tb-divider"></div>
+                    <div class="tb-group">
+                        <button class="tb-btn tb-btn-sm" :class="protocol === 'msgpack' ? 'tb-btn-active' : ''"
+                            @click="switchProtocol('msgpack')">MP</button>
+                        <button class="tb-btn tb-btn-sm" :class="protocol === 'json' ? 'tb-btn-active' : ''"
+                            @click="switchProtocol('json')">JSON</button>
+                    </div>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <span class="status-indicator" :class="connected ? 'online' : 'offline'">
+                    <span class="status-dot"></span>
+                    {{ connected ? '已连接' : '未连接' }}
+                </span>
             </div>
         </header>
 
         <main class="app-main">
-            <ControlPanel :connected="connected" :protocol="protocol" :write-enabled="writeEnabled"
-                :benchmark-running="benchmarkRunning"
-                :benchmark-progress="benchmarkProgress"
-                @connect="connect" @disconnect="disconnect" @start="startTest" @stop="stopTest"
-                @update-config="updateConfig" @switch-protocol="switchProtocol" @start-write="startWriteTest"
-                @stop-write="stopWriteTest" @start-benchmark="runBenchmark" @cancel-benchmark="cancelBenchmark" />
+            <aside class="sidebar">
+                <ControlPanel :connected="connected" :protocol="protocol" :write-enabled="writeEnabled"
+                    :running="running" :benchmark-running="benchmarkRunning" :total-benchmark-sec="estimatedTotalSec"
+                    :benchmark-progress="benchmarkProgress" @connect="connect" @disconnect="disconnect"
+                    @start="startTest" @stop="stopTest" @update-config="updateConfig" @switch-protocol="switchProtocol"
+                    @start-benchmark="runBenchmark" @cancel-benchmark="cancelBenchmark" />
+            </aside>
 
-            <BenchmarkReport v-if="showReport" :results="benchmarkResults" :protocol="protocol"
-                @close="showReport = false" />
+            <section class="content">
+                <BenchmarkReport v-if="showReport" :results="benchmarkResults" :protocol="protocol"
+                    @close="showReport = false" />
 
-            <div v-else class="panels">
-                <MetricsPanel :latencies="latencies" :write-latencies="writeLatencies" :fps="fps"
-                    :variable-count="variableCount" :batch-count="batchCount" />
-                <VariableGrid :variables="variables" />
-            </div>
+                <div v-else class="content-inner">
+                    <MetricsPanel :latencies="latencies" :write-latencies="writeLatencies" :fps="fps"
+                        :variable-count="variableCount" :batch-count="batchCount" :running="running"
+                        :elapsed-seconds="elapsedSeconds" :scenario-desc="currentScenarioDesc"
+                        :estimated-total-sec="estimatedTotalSec" :manual-total-sec="manualTotalSec" />
+                    <VariableGrid :variables="variables" />
+                </div>
+            </section>
         </main>
     </div>
 </template>
@@ -343,72 +425,159 @@ body {
     flex-direction: column;
 }
 
-
-.app-header {
+/* ─── 顶部工具栏 ─── */
+.app-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
+    padding: 0 20px;
+    height: 48px;
     background: #fff;
     border-bottom: 1px solid #d1d5db;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
 }
 
-.app-header h1 {
-    font-size: 20px;
+.toolbar-left h1 {
+    font-size: 16px;
     font-weight: 600;
     color: #1f2328;
 }
 
-.connection-status {
+.toolbar-center {
+    display: flex;
+    align-items: center;
+}
+
+.connection-controls {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    background: #f5f6f8;
+    padding: 3px;
+    border-radius: 6px;
 }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+.tb-btn {
+    padding: 5px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.12s ease;
+    white-space: nowrap;
 }
 
-.status-dot.online {
-    background: #1a7f37;
-    box-shadow: 0 0 6px rgba(26, 127, 55, 0.4);
+.tb-btn-primary {
+    background: #0969da;
+    color: #fff;
 }
 
-.status-dot.offline {
+.tb-btn-primary:hover {
+    background: #0550ae;
+}
+
+.tb-btn-danger {
     background: #cf222e;
+    color: #fff;
 }
 
-.protocol-badge {
-    padding: 2px 8px;
-    background: #eef1f5;
-    border-radius: 12px;
+.tb-btn-danger:hover {
+    background: #a0111f;
+}
+
+.tb-btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+.tb-btn-active {
+    background: #fff;
+    color: #0969da;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.tb-divider {
+    width: 1px;
+    height: 20px;
+    background: #d1d5db;
+}
+
+.tb-group {
+    display: flex;
+    gap: 2px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     font-weight: 500;
     color: #656d76;
 }
 
+.status-indicator.online {
+    color: #1a7f37;
+}
+
+.status-indicator.offline {
+    color: #cf222e;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.status-indicator.online .status-dot {
+    background: #1a7f37;
+    box-shadow: 0 0 5px rgba(26, 127, 55, 0.4);
+}
+
+.status-indicator.offline .status-dot {
+    background: #cf222e;
+}
+
+/* ─── 主体布局 ─── */
 .app-main {
     flex: 1;
-    padding: 20px 24px;
+    display: flex;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    border-right: 1px solid #d1d5db;
+    background: #fff;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    overflow-y: auto;
 }
 
-.panels {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 20px;
+.content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    overflow: hidden;
 }
 
-@media (max-width: 1024px) {
-    .panels {
-        grid-template-columns: 1fr;
-    }
+.content-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
 }
 </style>

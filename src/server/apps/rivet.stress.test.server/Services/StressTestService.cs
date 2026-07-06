@@ -29,7 +29,8 @@ public class StressTestService : BackgroundService
     {
         _hubContext = hubContext;
         _logger = logger;
-        RebuildVariables();
+        // 不在构造函数中创建变量，等用户点击"开始压测"后才创建
+        _variables = [];
     }
 
     /// <summary>
@@ -58,7 +59,11 @@ public class StressTestService : BackgroundService
     public void StopRunning()
     {
         _running = false;
-        _logger.LogInformation("压测已停止");
+        lock (_configLock)
+        {
+            _variables.Clear();
+        }
+        _logger.LogInformation("压测已停止，变量已清除");
     }
 
     public Dictionary<string, VariableState> GetSnapshot()

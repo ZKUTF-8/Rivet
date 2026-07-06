@@ -74,12 +74,15 @@ public class BridgeHub : Hub
     }
 
     /// <summary>
-    /// 客户端连接时，推送当前所有变量的快照。
+    /// 客户端连接时，如果压测已启动则推送当前所有变量的快照。
     /// </summary>
     public override async Task OnConnectedAsync()
     {
         var snapshot = _stressTest.GetSnapshot();
-        await Clients.Caller.SendAsync("InitialState", snapshot);
+        if (snapshot.Count > 0)
+        {
+            await Clients.Caller.SendAsync("InitialState", snapshot);
+        }
         await base.OnConnectedAsync();
     }
 }

@@ -16,6 +16,15 @@
                 "width": 1280,
                 "height": 800,
                 "center": true,
+                "decorations": true,
+                "resizable": true,
+                "maximizable": true,
+                "minimizable": true,
+                "closable": true,
+                "fullscreen": false,
+                "maximized": false,
+                "preventOverflow": true,
+                "shadow": true,
                 "theme": "Light"
             }
         ],

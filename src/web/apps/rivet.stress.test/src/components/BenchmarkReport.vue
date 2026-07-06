@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { BenchmarkResult } from '../App.vue'
 
 const props = defineProps<{
@@ -8,6 +8,8 @@ const props = defineProps<{
 }>()
 
 defineEmits<{ close: [] }>()
+
+const copied = ref(false)
 
 const recommendation = computed(() => {
     let lastOptimal = -1
@@ -25,6 +27,8 @@ const recommendation = computed(() => {
 
 const testDate = new Date().toLocaleString('zh-CN')
 
+const recommended = computed(() => recommendation.value.optimal ?? recommendation.value.acceptable)
+
 function latencyClass(ms: number): string {
     if (ms < 20) return 'cell-good'
     if (ms < 50) return 'cell-ok'
@@ -39,16 +43,19 @@ function fpsClass(fps: number): string {
     return 'cell-bad'
 }
 
-function exportTSV() {
-    const header = '场景\t变量数\t间隔(ms)\t平均延迟(ms)\tP95(ms)\tP99(ms)\t最大(ms)\t帧率(fps)\t吞吐量(/s)\t批次数'
+async function exportTSV() {
+    const header = '场景\t变量数\t间隔(ms)\t平均延迟(ms)\tP95(ms)\tP99(ms)\t最大(ms)\t推送轮次/秒\t吞吐量(/s)\t批次数'
     const rows = props.results.map(r =>
         [r.scenario.label, r.scenario.variableCount, r.scenario.updateIntervalMs,
             r.avgLatency, r.p95Latency, r.p99Latency, r.maxLatency,
             r.avgFps, r.throughput, r.totalBatches].join('\t')
     )
     const text = [header, ...rows].join('\n')
-    navigator.clipboard.writeText(text)
-    alert('已复制到剪贴板（TSV 格式，可粘贴到 Excel）')
+    await navigator.clipboard.writeText(text)
+    copied.value = true
+    window.setTimeout(() => {
+        copied.value = false
+    }, 1600)
 }
 </script>
 
@@ -64,8 +71,20 @@ function exportTSV() {
                 </div>
             </div>
             <div class="report-actions">
-                <button class="btn btn-sm" @click="exportTSV">复制数据</button>
+                <button class="btn btn-sm" :class="{ copied }" @click="exportTSV">
+                    {{ copied ? '已复制' : '复制数据' }}
+                </button>
                 <button class="btn btn-sm btn-primary" @click="$emit('close')">关闭报告</button>
+            </div>
+        </div>
+
+        <div v-if="recommended" class="result-callout">
+            <div class="callout-kicker">推荐负载上限</div>
+            <div class="callout-main">
+                <strong>{{ recommended.scenario.label }}</strong>
+                <span>{{ recommended.scenario.variableCount.toLocaleString() }} 个变量 · {{
+                    recommended.scenario.updateIntervalMs }}ms 推送 · 平均延迟 {{ recommended.avgLatency }}ms · 每秒 {{
+                        recommended.avgFps }} 轮</span>
             </div>
         </div>
 
@@ -75,13 +94,13 @@ function exportTSV() {
             <div v-if="recommendation.optimal" class="summary-card optimal">
                 <div class="summary-icon">●</div>
                 <div>
-                    <strong>最佳方案</strong>（平均延迟 &lt; 20ms，帧率 ≥ 10fps）
+                    <strong>最佳方案</strong>（平均延迟 &lt; 20ms，每秒推送 ≥ 10 轮）
                     <div class="summary-detail">
                         {{ recommendation.optimal.scenario.label }} —
                         {{ recommendation.optimal.scenario.variableCount }} 个变量，
                         {{ recommendation.optimal.scenario.updateIntervalMs }}ms 间隔，
                         平均延迟 {{ recommendation.optimal.avgLatency }}ms，
-                        帧率 {{ recommendation.optimal.avgFps }}fps
+                        每秒推送 {{ recommendation.optimal.avgFps }} 轮
                     </div>
                 </div>
             </div>
@@ -89,13 +108,13 @@ function exportTSV() {
                 class="summary-card acceptable">
                 <div class="summary-icon">●</div>
                 <div>
-                    <strong>可接受上限</strong>（平均延迟 &lt; 50ms，帧率 ≥ 5fps）
+                    <strong>可接受上限</strong>（平均延迟 &lt; 50ms，每秒推送 ≥ 5 轮）
                     <div class="summary-detail">
                         {{ recommendation.acceptable.scenario.label }} —
                         {{ recommendation.acceptable.scenario.variableCount }} 个变量，
                         {{ recommendation.acceptable.scenario.updateIntervalMs }}ms 间隔，
                         平均延迟 {{ recommendation.acceptable.avgLatency }}ms，
-                        帧率 {{ recommendation.acceptable.avgFps }}fps
+                        每秒推送 {{ recommendation.acceptable.avgFps }} 轮
                     </div>
                 </div>
             </div>
@@ -120,7 +139,7 @@ function exportTSV() {
                         <th class="num">P95</th>
                         <th class="num">P99</th>
                         <th class="num">最大延迟</th>
-                        <th class="num">帧率</th>
+                        <th class="num">推送轮次/秒</th>
                         <th class="num">吞吐量</th>
                         <th class="num">批次数</th>
                     </tr>
@@ -144,10 +163,10 @@ function exportTSV() {
 
         <!-- 图例 -->
         <div class="legend">
-            <span class="legend-item"><span class="dot good" />优秀（&lt;20ms / ≥30fps）</span>
-            <span class="legend-item"><span class="dot ok" />良好（&lt;50ms / ≥15fps）</span>
-            <span class="legend-item"><span class="dot warn" />警告（&lt;100ms / ≥5fps）</span>
-            <span class="legend-item"><span class="dot bad" />超标（≥100ms / &lt;5fps）</span>
+            <span class="legend-item"><span class="dot good" />优秀（延迟&lt;20ms / 每秒≥30轮）</span>
+            <span class="legend-item"><span class="dot ok" />良好（延迟&lt;50ms / 每秒≥15轮）</span>
+            <span class="legend-item"><span class="dot warn" />警告（延迟&lt;100ms / 每秒≥5轮）</span>
+            <span class="legend-item"><span class="dot bad" />超标（延迟≥100ms / 每秒&lt;5轮）</span>
         </div>
     </div>
 </template>
@@ -237,6 +256,43 @@ h3 {
 .summary-detail {
     color: #656d76;
     font-size: 12px;
+}
+
+.result-callout {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    background: #f6f8fa;
+    border: 1px solid #d8dee4;
+    border-left: 4px solid #1a7f37;
+    border-radius: 6px;
+}
+
+.callout-kicker {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a7f37;
+}
+
+.callout-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+.callout-main strong {
+    font-size: 16px;
+    color: #1f2328;
+}
+
+.callout-main span {
+    font-size: 13px;
+    color: #57606a;
 }
 
 /* 表格 */
@@ -362,6 +418,12 @@ tr:hover td {
 
 .btn:hover {
     background: #e5e7eb;
+}
+
+.btn.copied {
+    border-color: #1a7f37;
+    color: #1a7f37;
+    background: #f0fdf4;
 }
 
 .btn-sm {

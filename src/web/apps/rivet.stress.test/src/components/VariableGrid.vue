@@ -1,261 +1,258 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
     variables: Record<string, any>
 }>()
 
 const search = ref('')
-const pageSize = ref(100)
+const pageSize = ref(50)
 const currentPage = ref(0)
 
+const allEntries = computed(() => Object.entries(props.variables))
+
 const entries = computed(() => {
-    const all = Object.entries(props.variables)
     if (search.value) {
         const q = search.value.toLowerCase()
-        return all.filter(([key]) => key.toLowerCase().includes(q))
+        return allEntries.value.filter(([key]) => key.toLowerCase().includes(q))
     }
-    return all
+    return allEntries.value
 })
 
 const totalPages = computed(() => Math.ceil(entries.value.length / pageSize.value))
+
+const countText = computed(() => {
+    if (!search.value) return entries.value.length.toLocaleString()
+    return `${entries.value.length.toLocaleString()} / ${allEntries.value.length.toLocaleString()}`
+})
+
+const emptyText = computed(() => {
+    if (search.value) return '没有匹配的变量'
+    return '暂无变量数据'
+})
+
+watch(search, () => {
+    currentPage.value = 0
+})
+
+watch([entries, pageSize], () => {
+    const maxPage = Math.max(0, totalPages.value - 1)
+    if (currentPage.value > maxPage) {
+        currentPage.value = maxPage
+    }
+}, { flush: 'sync' })
 
 const pagedEntries = computed(() => {
     const start = currentPage.value * pageSize.value
     return entries.value.slice(start, start + pageSize.value)
 })
 
-function typeLabel(type: number): string {
-    switch (type) {
-        case 0: return '温度'
-        case 1: return '压力'
-        case 2: return '位置'
-        case 3: return '计数'
-        case 4: return '文本'
-        case 5: return '数组'
-        case 6: return '设备'
-        default: return '未知'
-    }
-}
-
-function typeColor(type: number): string {
-    switch (type) {
-        case 0: return '#f47067'
-        case 1: return '#58a6ff'
-        case 2: return '#3fb950'
-        case 3: return '#d29922'
-        case 4: return '#a371f7'
-        case 5: return '#f778ba'
-        case 6: return '#79c0ff'
-        default: return '#8b949e'
-    }
+const typeInfo: Record<number, { label: string; color: string }> = {
+    0: { label: '温度', color: '#f47067' },
+    1: { label: '压力', color: '#58a6ff' },
+    2: { label: '位置', color: '#3fb950' },
+    3: { label: '计数', color: '#d29922' },
+    4: { label: '文本', color: '#a371f7' },
+    5: { label: '数组', color: '#f778ba' },
+    6: { label: '设备', color: '#79c0ff' },
 }
 
 function formatValue(val: any): string {
     if (val === null || val === undefined) return '-'
     if (typeof val === 'number') return val.toFixed(2)
-    if (typeof val === 'string') return val.length > 60 ? val.substring(0, 60) + '…' : val
+    if (typeof val === 'string') return val.length > 24 ? val.substring(0, 24) + '…' : val
     if (Array.isArray(val)) {
-        const preview = val.slice(0, 3).map((x: any) => typeof x === 'number' ? x.toFixed(1) : x).join(', ')
-        return `[${val.length}] ${preview}${val.length > 3 ? ', …' : ''}`
+        const preview = val.slice(0, 2).map((x: any) => typeof x === 'number' ? x.toFixed(1) : x).join(', ')
+        return `[${val.length}] ${preview}${val.length > 2 ? ', …' : ''}`
     }
     if (typeof val === 'object') {
-        const entries = Object.entries(val)
-        const preview = entries.slice(0, 3).map(([k, v]) => `${k}: ${formatBrief(v)}`).join(', ')
-        return `{${preview}${entries.length > 3 ? ', …' : ''}}`
+        const kvs = Object.entries(val).slice(0, 2).map(([k, v]) => `${k}: ${typeof v === 'number' ? v.toFixed(1) : v}`).join(', ')
+        return `{${kvs}${Object.keys(val).length > 2 ? ', …' : ''}}`
     }
-    return String(val)
-}
-
-function formatBrief(val: any): string {
-    if (typeof val === 'number') return val.toFixed(1)
-    if (typeof val === 'string') return val.length > 12 ? val.substring(0, 12) + '…' : val
-    if (Array.isArray(val)) return `[${val.length}]`
     return String(val)
 }
 </script>
 
 <template>
-    <div class="variable-grid">
-        <div class="grid-header">
-            <h2>变量列表 ({{ entries.length }})</h2>
-            <input v-model="search" type="text" placeholder="搜索变量..." class="search-input" />
+    <div class="vg">
+        <div class="vg-hd">
+            <span class="vg-title">变量列表 <span class="vg-count">{{ countText }}</span></span>
+            <input v-model="search" type="text" placeholder="搜索…" class="vg-search" />
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>名称</th>
-                        <th>类型</th>
-                        <th>当前值</th>
-                        <th>更新次数</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="[key, v] in pagedEntries" :key="key">
-                        <td class="var-name">{{ key }}</td>
-                        <td>
-                            <span class="type-tag" :style="{ color: typeColor(v.type) }">
-                                {{ typeLabel(v.type) }}
-                            </span>
-                        </td>
-                        <td class="var-value">{{ formatValue(v.value) }}</td>
-                        <td class="var-count">{{ v.updateCount?.toLocaleString() ?? 0 }}</td>
-                    </tr>
-                    <tr v-if="pagedEntries.length === 0">
-                        <td colspan="4" class="empty">暂无数据 — 连接服务器并启动压测</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="vg-body">
+            <div class="vg-grid">
+                <div v-for="[key, v] in pagedEntries" :key="key" class="vg-card">
+                    <span class="dot" :style="{ background: typeInfo[v.type]?.color ?? '#8b949e' }"
+                        :title="typeInfo[v.type]?.label ?? '未知'"></span>
+                    <span class="vg-card-name">{{ key }}</span>
+                    <span class="vg-card-val">{{ formatValue(v.value) }}</span>
+                    <span class="vg-card-upd">{{ v.updateCount?.toLocaleString() ?? 0 }}次</span>
+                </div>
+                <div v-if="pagedEntries.length === 0" class="vg-empty">
+                    {{ emptyText }}
+                </div>
+            </div>
         </div>
 
-        <div v-if="totalPages > 1" class="pagination">
-            <button class="btn-page" :disabled="currentPage === 0" @click="currentPage--">
-                上一页
-            </button>
-            <span>{{ currentPage + 1 }} / {{ totalPages }}</span>
-            <button class="btn-page" :disabled="currentPage >= totalPages - 1" @click="currentPage++">
-                下一页
-            </button>
+        <div v-if="totalPages > 1" class="vg-pg">
+            <button class="vg-btn" :disabled="currentPage === 0" @click="currentPage--">‹</button>
+            <span class="vg-pg-info">{{ currentPage + 1 }} / {{ totalPages }}</span>
+            <button class="vg-btn" :disabled="currentPage >= totalPages - 1" @click="currentPage++">›</button>
         </div>
     </div>
 </template>
 
 <style scoped>
-.variable-grid {
+.vg {
     background: #fff;
     border: 1px solid #d1d5db;
     border-radius: 8px;
-    padding: 20px;
     display: flex;
     flex-direction: column;
     min-height: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.grid-header {
+.vg-hd {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    padding: 10px 14px 0;
 }
 
-h2 {
-    font-size: 16px;
+.vg-title {
+    font-size: 14px;
+    font-weight: 600;
     color: #1f2328;
 }
 
-.search-input {
-    padding: 6px 12px;
+.vg-count {
+    font-weight: 400;
+    color: #656d76;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+.vg-search {
+    padding: 4px 10px;
     background: #f9fafb;
     border: 1px solid #d1d5db;
-    border-radius: 6px;
+    border-radius: 5px;
     color: #1f2328;
-    font-size: 13px;
-    width: 200px;
+    font-size: 12px;
+    width: 130px;
+    outline: none;
 }
 
-.search-input::placeholder {
+.vg-search::placeholder {
     color: #9ca3af;
 }
 
-.table-container {
+.vg-search:focus {
+    border-color: #0969da;
+}
+
+.vg-body {
     flex: 1;
     overflow: auto;
+    padding: 8px 14px 4px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
+.vg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
 }
 
-thead {
-    position: sticky;
-    top: 0;
-    background: #fff;
+.vg-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    background: #fafbfc;
+    min-width: 0;
 }
 
-th {
-    text-align: left;
-    padding: 8px 12px;
-    border-bottom: 1px solid #d1d5db;
-    color: #656d76;
-    font-weight: 500;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-td {
-    padding: 6px 12px;
-    border-bottom: 1px solid #f0f1f3;
-}
-
-tr:hover td {
-    background: #f5f6f8;
-}
-
-.var-name {
+.vg-card-name {
     font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
     color: #0550ae;
-}
-
-.var-value {
-    font-family: 'Cascadia Code', 'Fira Code', monospace;
-    font-size: 12px;
-    color: #1f2328;
-    max-width: 400px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 30%;
 }
 
-.var-count {
-    color: #656d76;
-    font-variant-numeric: tabular-nums;
+.vg-card-val {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 11px;
+    color: #1f2328;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
-.type-tag {
-    font-size: 12px;
-    font-weight: 500;
+.vg-card-upd {
+    font-size: 10px;
+    color: #9ca3af;
+    flex-shrink: 0;
 }
 
-.empty {
+.dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.vg-empty {
+    grid-column: 1 / -1;
     text-align: center;
     color: #9ca3af;
-    padding: 40px 12px;
+    padding: 36px 4px;
+    font-size: 13px;
 }
 
-.pagination {
+.vg-pg {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    margin-top: 12px;
-    padding-top: 12px;
+    gap: 10px;
+    padding: 8px 14px;
     border-top: 1px solid #e5e7eb;
-    font-size: 13px;
+    font-size: 12px;
     color: #656d76;
 }
 
-.btn-page {
-    padding: 4px 12px;
+.vg-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
     background: #f3f4f6;
     border: 1px solid #d1d5db;
     border-radius: 4px;
     color: #374151;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.btn-page:disabled {
-    opacity: 0.4;
+.vg-btn:disabled {
+    opacity: 0.35;
     cursor: not-allowed;
 }
 
-.btn-page:hover:not(:disabled) {
+.vg-btn:hover:not(:disabled) {
     background: #e5e7eb;
 }
 </style>
