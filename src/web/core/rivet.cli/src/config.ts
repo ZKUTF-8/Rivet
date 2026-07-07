@@ -62,9 +62,6 @@ export interface RivetViteDefaults {
     }
 }
 
-/** Rivet 可识别的 Vite proxy 配置。 */
-export type RivetViteProxy = NonNullable<NonNullable<RivetViteDefaults['server']>['proxy']>
-
 /** 填充默认值后的 Rivet 配置。 */
 export interface ResolvedRivetConfig {
     /** 填充默认值后的前端配置。 */
@@ -81,7 +78,7 @@ export interface ResolvedRivetConfig {
 export function resolveRivetConfig(config: Partial<RivetConfig> = {}, vite: RivetViteDefaults = {}): ResolvedRivetConfig {
     const viteHost = resolveViteHost(vite.server?.host)
     const vitePort = vite.server?.port ?? 9720
-    const serverUrl = config.server?.url ?? resolveServerUrlFromProxy(vite.server?.proxy)
+    const serverUrl = config.server?.url
     const webHost = viteHost
     const webPort = vitePort
 
@@ -119,12 +116,4 @@ function resolveViteHost(host: string | boolean | undefined): string {
 function toBrowserHost(host: string): string {
     if (host === '0.0.0.0' || host === '::') return 'localhost'
     return host
-}
-
-/** 从旧版手写 Vite proxy 中兼容推导后端地址；新项目应使用 rivet.server.url。 */
-function resolveServerUrlFromProxy(proxy?: RivetViteProxy): string | undefined {
-    const proxyItem = proxy?.['/bridge']
-    const url = typeof proxyItem === 'string' ? proxyItem : proxyItem?.target
-
-    return url
 }

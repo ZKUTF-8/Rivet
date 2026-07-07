@@ -4,6 +4,7 @@ export {
     type CreateConnectionOptions,
     type Protocol,
     type RivetConnection,
+    type StartConnectionOptions,
 } from './connection'
 
 export {

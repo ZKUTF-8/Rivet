@@ -18,7 +18,6 @@ src/
     core/
       rivet.client/               # 浏览器运行时，未来发布 @rivet/client
       rivet.cli/                  # 开发 CLI，未来发布 @rivet/cli
-      rivet.shell/                # 壳能力包，未来发布 @rivet/shell
     apps/
       rivet.stress.test/          # 压测前端
       mysoow.toolkit/             # 真实业务前端入口
@@ -117,5 +116,5 @@ C# Attribute
 - `Rivet.Core`：服务端运行时、特性、`Rv<T>`、Bridge Hub。
 - `Rivet.Generator`：生成 `rivet.contract.json`。
 - `@rivet/client`：浏览器运行时。
-- `@rivet/cli`：开发命令、TS 生成、Vite 编排。
-- `@rivet/shell`：壳能力包，被 CLI 调用，不在浏览器代码中使用。
+- `@rivet/cli`：开发命令、TS 生成、Vite 编排，并在壳子模式下调用内置 Tauri 壳工程。
+- `src/shell/core/rivet.shell`：Tauri 壳工程，作为 CLI 调用的内置模板，不作为前端 npm 包暴露。

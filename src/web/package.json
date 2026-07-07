@@ -4,12 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter rivet.stress.test dev",
-    "dev:shell": "pnpm --filter rivet.stress.test dev:shell",
-    "build": "pnpm --filter rivet.stress.test build",
-    "dev:toolkit": "pnpm --filter mysoow.toolkit dev",
-    "dev:toolkit:shell": "pnpm --filter mysoow.toolkit dev:shell",
-    "build:toolkit": "pnpm --filter mysoow.toolkit build",
-    "dev:client": "pnpm --filter @rivet/client dev"
+    "dev": "pnpm --filter mysoow.toolkit dev",
+    "dev:shell": "pnpm --filter mysoow.toolkit dev:shell",
+    "build": "pnpm --filter mysoow.toolkit build",
+    "dev:stress": "pnpm --filter rivet.stress.test dev",
+    "dev:stress:shell": "pnpm --filter rivet.stress.test dev:shell",
+    "build:stress": "pnpm --filter rivet.stress.test build"
   }
 }

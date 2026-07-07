@@ -70,6 +70,10 @@
         "editor.tabSize": 4,
         "editor.defaultFormatter": "vscode.typescript-language-features"
     },
+    "[javascript]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
     "[vue]": {
         "editor.tabSize": 4,
         "editor.defaultFormatter": "Vue.volar"

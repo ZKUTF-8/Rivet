@@ -74,10 +74,13 @@ importers:
         version: 2.2.12(typescript@5.9.3)
 
   core/rivet.cli:
-    dependencies:
-      '@rivet/shell':
-        specifier: workspace:*
-        version: link:../rivet.shell
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
 
   core/rivet.client:
     dependencies:
@@ -90,12 +93,6 @@ importers:
       vue:
         specifier: ^3.5.0
         version: 3.5.32(typescript@5.9.3)
-
-  core/rivet.shell:
-    dependencies:
-      '@rivet/client':
-        specifier: workspace:*
-        version: link:../rivet.client
 
 packages:
 

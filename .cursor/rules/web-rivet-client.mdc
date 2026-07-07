@@ -18,6 +18,7 @@ alwaysApply: false
 
 - 所有导出的函数和类型使用 TSDoc 注释（`/** ... */`），中文说明
 - 内部状态、内部函数、非导出常量也需要中文 JSDoc/TSDoc 或必要注释，说明职责、生命周期或协议边界
+- 有参数或返回值的函数如果涉及后端 key、协议原始值、重连生命周期或类型归一化，应使用 `@param`、`@returns` 说明参数来源和返回形状
 - Vue `<script setup>` 中的顶层变量、计算属性、监听器和内部函数按组件内部成员处理；注释解释意图，不要翻译代码
 - 使用 Vue 3 Composition API（`ref`、`computed` 等）
 - 函数命名：`use` 前缀表示 Composable（如 `useBindable`、`useCall`）

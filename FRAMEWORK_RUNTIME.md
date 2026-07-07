@@ -10,7 +10,7 @@
 - `@rivet/cli/vite` 提供 `rivet()` 插件，把隐藏生成物注入到 `@rivet/client` 的默认生成入口。
 - `@rivet/client` 是浏览器运行时，只负责连接、变量同步和方法调用。
 - `@rivet/client` 安装后自动连接；首次连接失败和已连接后的断线都会按内部固定 2 秒间隔持续重试。
-- `@rivet/shell` 只提供壳能力，不再暴露顶层 `rivet` bin。
+- `src/shell/core/rivet.shell` 是 CLI 在壳子模式下调用的内置 Tauri 壳工程，不再保留单独的 `@rivet/shell` npm 包。
 
 ## 命令入口
 
