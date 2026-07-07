@@ -79,25 +79,21 @@ pnpm --dir src\web --filter rivet.stress.test dev
 pnpm --dir src\web --filter rivet.stress.test dev:shell
 ```
 
-业务前端可以在 `vite.config.ts` 的 `rivet` 字段里配置这些默认值。通常只需要保留标准 Vite 配置，Rivet 会从 `server.host`、`server.port`、`server.proxy` 和 `build.outDir` 推导：
+业务前端通过 `@rivet/cli/vite` 的 `rivet()` 插件接入壳子开发能力。通常只需要保留标准 Vite 监听配置，并在 `rivet.server.url` 填写后端地址；`/bridge` 代理由插件自动注入：
 
 ```ts
 import { defineConfig } from 'vite'
+import { rivet } from '@rivet/cli/vite'
 
 export default defineConfig({
+    plugins: [rivet()],
     server: {
         host: '127.0.0.1',
         port: 9720,
-        proxy: {
-            '/bridge': {
-                target: 'http://localhost:9710',
-                ws: true,
-            },
-        },
     },
     rivet: {
-        shell: {
-            enabled: true,
+        server: {
+            url: 'http://localhost:9710',
         },
     },
 })

@@ -36,6 +36,15 @@ export function rivet(options: RivetVitePluginOptions = {}): RivetVitePlugin {
             const generatedPath = path.resolve(root, resolved.generated.out)
 
             return {
+                server: {
+                    proxy: {
+                        ...(config.server?.proxy ?? {}),
+                        [resolved.server.bridgePath]: {
+                            target: resolved.server.url,
+                            ws: true,
+                        },
+                    },
+                },
                 resolve: {
                     alias: [
                         {

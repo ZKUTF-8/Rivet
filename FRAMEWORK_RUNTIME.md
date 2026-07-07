@@ -31,7 +31,7 @@
 
 ## 配置来源
 
-`vite.config.ts` 通过 `rivet()` 插件接入隐藏生成物，`rivet` 字段描述前端、后端访问地址、contract 生成位置和壳配置：
+`vite.config.ts` 通过 `rivet()` 插件接入隐藏生成物，并自动注入 `/bridge` Vite 代理。`rivet` 字段只描述后端项目、后端访问地址和必要的生成配置：
 
 ```ts
 plugins: [rivet(), vue()],
@@ -39,17 +39,13 @@ rivet: {
     server: {
         project: '../../../server/apps/mysoow.toolkit.server/Mysoow.Toolkit.Server.csproj',
         url: 'http://localhost:9735',
-        bridgePath: '/bridge',
-    },
-    shell: {
-        enabled: true,
     },
 }
 ```
 
 不配置 `generated.out` 时默认写入 `.rivet/generated/rv.generated.ts`。这个文件属于框架管理的隐藏中间产物，不提交到仓库，也不要求业务代码导入。
 
-`server.url` 只表示前端访问后端的地址，不配置 ASP.NET Core 监听端口。后端端口由后端宿主自己负责。
+`server.url` 只表示前端访问后端的地址，Rivet 会根据它自动配置 Vite `/bridge` 代理；它不配置 ASP.NET Core 监听端口。后端端口由后端宿主自己负责。
 
 ## 生成流程
 

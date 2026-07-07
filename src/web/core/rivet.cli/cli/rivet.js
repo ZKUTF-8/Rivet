@@ -405,15 +405,13 @@ async function startVite(viteModule, configPath, webHost, webPort, projectCwd) {
 /** 启动 Vite，等待监听完成后再启动 Tauri 壳。 */
 async function runDevWithShell(context, webUrl, webHost, webPort, contractWatcher) {
     const viteServer = await startVite(context.vite, context.viteConfigPath, webHost, webPort, context.projectCwd);
-    const cargoManifestPath = context.config.shell.cargoManifestPath
-        ? path.resolve(context.projectCwd, context.config.shell.cargoManifestPath)
-        : path.join(shellRoot, "Cargo.toml");
-    const cargoCwd = path.dirname(cargoManifestPath);
+    const shellManifestPath = path.join(shellRoot, "Cargo.toml");
+    const cargoCwd = path.dirname(shellManifestPath);
     const tauriConfigPath = writeTauriDevConfig(context.projectCwd, webUrl, context.config);
 
     const shell = spawnChild(
         resolveCargoCommand(),
-        ["tauri", "dev", "--config", tauriConfigPath, ...context.config.shell.args],
+        ["tauri", "dev", "--config", tauriConfigPath],
         {
             cwd: cargoCwd,
             env: {
