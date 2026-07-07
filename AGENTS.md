@@ -9,8 +9,13 @@ Codex 在处理本仓库时，应优先读取并遵守 `.cursor/rules` 下的规
 当前约定：
 
 - 前端暴露给业务代码的全局对象统一命名为 `rv`。
-- 开发阶段后端默认监听 `http://localhost:9710`，SignalR Hub 端点为 `/bridge`。
+- 后端监听地址和端口由 ASP.NET Core 宿主配置；Rivet 只负责 Bridge Hub 路径，默认端点为 `/bridge`。
+- 后端核心公开面保持最小：除业务项目必须直接引用的 API 外，类型和成员优先使用 `internal` 或 `private`。
+- C# 私有字段、私有方法、内部类型和内部成员也需要中文 XML 文档注释；前端 TypeScript/Vue 的内部状态、内部函数、非导出常量也需要中文 JSDoc/TSDoc 或必要注释；注释解释职责和设计原因，不要翻译代码。
+- 不要为了单次调用的一行逻辑额外封装私有方法；只有能表达边界、隐藏复杂度或复用时才拆方法。
+- Rivet.Core 不内置 CORS，跨域由应用层自行配置。
 - 前端开发服务器默认使用 `http://localhost:9720`。
+- Mysoow.Toolkit 样板当前由宿主监听 `http://localhost:9735`，前端使用 `http://localhost:9730`。
 - 框架核心实现与业务示例先放在同一仓库内，通过本地引用协作；成熟后再拆分为 npm 包、NuGet 包和 Tauri 模板。
 - 目录命名统一使用小写加点号，例如 `rivet.core`、`rivet.stress.test.server`、`mysoow.toolkit`。
 - 根目录结构以 `src/server`、`src/web`、`src/shell` 为主，避免继续新增 `src/backend` 或 `src/tauri`。

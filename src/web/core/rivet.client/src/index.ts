@@ -7,6 +7,14 @@ export {
 } from './connection'
 
 export {
+    createRuntime,
+    type RivetConnectionStatus,
+    type RivetMethodResult,
+    type RivetRuntimeClient,
+    type RivetVariableState,
+} from './runtime'
+
+export {
     createBackend,
     useRivetBackend,
     rivetBackendKey,

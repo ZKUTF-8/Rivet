@@ -1,12 +1,12 @@
 namespace Rivet.Core;
 
 /// <summary>
-/// 传给前端的 Rivet 变量状态。
+/// 传给前端的 Rivet 变量状态。MessagePack 动态序列化要求 Hub 返回类型为公开类型。
 /// </summary>
 public sealed class RivetVariableState
 {
     /// <summary>
-    /// 变量名称。
+    /// 前后端统一变量键。
     /// </summary>
     public required string Name { get; init; }
 

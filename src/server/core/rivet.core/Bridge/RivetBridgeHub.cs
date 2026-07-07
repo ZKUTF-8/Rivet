@@ -5,10 +5,16 @@ namespace Rivet.Core;
 /// <summary>
 /// Rivet 内置 Bridge Hub。业务项目不直接依赖这个类型，由 MapRivet 自动注册。
 /// </summary>
-public sealed class RivetBridgeHub : Hub
+internal sealed class RivetBridgeHub : Hub
 {
+    /// <summary>
+    /// Bridge Hub 委托的运行时注册表，负责真正的变量读写和方法调用。
+    /// </summary>
     private readonly RivetRuntime _runtime;
 
+    /// <summary>
+    /// 创建 Bridge Hub 实例。
+    /// </summary>
     public RivetBridgeHub(RivetRuntime runtime)
     {
         _runtime = runtime;
@@ -23,23 +29,19 @@ public sealed class RivetBridgeHub : Hub
     }
 
     /// <summary>
-    /// 写入一个字符串形式的变量值。MVP 阶段先覆盖常见基础类型。
+    /// 写入一个 JSON 形式的变量值。
     /// </summary>
-    public async Task<RivetVariableState> SetVariable(string name, string? value)
+    public RivetVariableState SetVariable(string name, string? valueJson)
     {
-        var state = _runtime.SetVariable(name, value);
-        await Clients.All.SendAsync("RivetVariableChanged", state);
-        return state;
+        return _runtime.SetVariable(name, valueJson, Context.ConnectionId);
     }
 
     /// <summary>
     /// 调用一个业务方法。
     /// </summary>
-    public async Task<RivetMethodResult> InvokeMethod(string name, string? value)
+    public Task<RivetMethodResult> InvokeMethod(string name, string? argsJson)
     {
-        var result = await _runtime.InvokeAsync(name, value);
-        await Clients.All.SendAsync("RivetSnapshot", _runtime.GetSnapshot());
-        return result;
+        return _runtime.InvokeAsync(name, argsJson);
     }
 
     /// <summary>
@@ -47,7 +49,7 @@ public sealed class RivetBridgeHub : Hub
     /// </summary>
     public override async Task OnConnectedAsync()
     {
-        await Clients.Caller.SendAsync("RivetInitialState", _runtime.GetSnapshot());
+        await Clients.Caller.SendAsync(RivetHubEvents.InitialState, _runtime.GetSnapshot());
         await base.OnConnectedAsync();
     }
 }

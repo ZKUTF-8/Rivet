@@ -6,5 +6,5 @@ import App from './App.vue'
 
 createApp(App)
     .use(Antd)
-    .use(createBackend({ autoStart: false, protocol: 'json' }))
+    .use(createBackend())
     .mount('#app')

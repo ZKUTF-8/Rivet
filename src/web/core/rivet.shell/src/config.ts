@@ -26,18 +26,6 @@ export interface RivetServerConfig {
     url?: string
     /** SignalR Bridge Hub 路径。 */
     bridgePath?: string
-    /** 后端进程启动配置，后续打包和开发联动时使用。 */
-    process?: RivetServerProcessConfig
-}
-
-/** 后端进程启动配置。 */
-export interface RivetServerProcessConfig {
-    /** 后端启动命令，例如 `dotnet` 或某个发布后的 exe。 */
-    command?: string
-    /** 传给后端启动命令的参数。 */
-    args?: string[]
-    /** 后端进程工作目录。 */
-    cwd?: string
 }
 
 /** 桌面壳配置。 */
@@ -76,9 +64,7 @@ export interface ResolvedRivetConfig {
     /** 填充默认值后的前端配置。 */
     web: Required<RivetWebConfig>
     /** 填充默认值后的后端配置。 */
-    server: Required<Pick<RivetServerConfig, 'url' | 'bridgePath'>> & {
-        process?: RivetServerProcessConfig
-    }
+    server: Required<Pick<RivetServerConfig, 'url' | 'bridgePath'>>
     /** 填充默认值后的桌面壳配置。 */
     shell: Required<Pick<RivetShellConfig, 'enabled'>> & {
         cargoManifestPath?: string
@@ -104,7 +90,6 @@ export function resolveRivetConfig(config: RivetConfig = {}, vite: RivetViteDefa
         server: {
             url: config.server?.url ?? proxyServer.url,
             bridgePath: config.server?.bridgePath ?? proxyServer.bridgePath,
-            process: config.server?.process,
         },
         shell: {
             enabled: config.shell?.enabled ?? false,

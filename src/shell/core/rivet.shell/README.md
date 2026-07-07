@@ -1,6 +1,6 @@
 # rivet.shell
 
-`rivet.shell` 是 Rivet 的 Tauri 桌面壳工程。它负责把前端页面加载到系统 WebView 中，后续会负责拉起本地 `.NET server` 进程，并最终沉淀为 `@rivet/shell` CLI 使用的壳模板。
+`rivet.shell` 是 Rivet 的 Tauri 桌面壳工程。它负责把前端页面加载到系统 WebView 中，后续会负责拉起本地 `.NET server` 进程，并最终沉淀为 `@rivet/cli` 调用的壳模板。
 
 当前阶段它还是一个固定壳工程，用来验证 Tauri 加载前端、窗口配置和后续 sidecar 方案。
 
@@ -65,7 +65,7 @@ pnpm -v
 }
 ```
 
-直接在壳子目录运行 `cargo tauri dev` 时，Tauri 会加载这个默认地址。业务前端通过 `@rivet/shell` 启动时，CLI 会根据业务项目的 `vite.config.ts` 生成 `.rivet/tauri.dev.conf.json`，并通过 `cargo tauri dev --config` 覆盖 `devUrl` 和 `frontendDist`。
+直接在壳子目录运行 `cargo tauri dev` 时，Tauri 会加载这个默认地址。业务前端通过 `@rivet/cli` 启动时，CLI 会根据业务项目的 `vite.config.ts` 生成 `.rivet/tauri.dev.conf.json`，并通过 `cargo tauri dev --config` 覆盖 `devUrl` 和 `frontendDist`。
 
 业务前端可以直接通过统一 CLI 启动浏览器模式：
 
@@ -109,7 +109,7 @@ export default defineConfig({
 dotnet run --project src\server\apps\rivet.stress.test.server\Rivet.StressTest.Server.csproj
 ```
 
-当前阶段壳子不自动拉起 server。后续会通过 `@rivet/shell` CLI 和 sidecar 配置，把 server 发布、复制、启动流程封装起来。
+当前阶段壳子不自动拉起 server。后续会通过 `@rivet/cli` 和 sidecar 配置，把 server 发布、复制、启动流程封装起来。
 
 ## 检查命令
 
@@ -134,7 +134,7 @@ web/apps/mysoow.toolkit
   package.json scripts 调用 rivet CLI
   vite.config.ts 的 rivet 字段配置前端 devUrl、dist、server 发布命令和 sidecar 参数
 
-@rivet/shell
+@rivet/cli
   读取配置
   生成或复用 Tauri 壳模板
   启动 Vite 和 Tauri dev，加载业务前端 devUrl

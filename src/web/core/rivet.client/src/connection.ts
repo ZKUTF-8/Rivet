@@ -4,13 +4,16 @@ import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack'
 /** SignalR 通信协议。 */
 export type Protocol = 'json' | 'msgpack'
 
+/** Rivet 内部固定重连间隔。 */
+const reconnectIntervalMs = 2000
+
 /** 创建 Rivet SignalR 连接所需的配置。 */
 export interface CreateConnectionOptions {
     /** SignalR Hub 完整地址。传入后优先级最高。 */
     url?: string
-    /** 后端主机地址，默认使用 `localhost`。 */
+    /** 后端主机地址。不传时默认使用当前前端来源和 Vite proxy。 */
     host?: string
-    /** 后端端口，默认使用 `9710`。 */
+    /** 后端端口。与 host 一起传入时生成完整后端地址。 */
     port?: number
     /** 是否使用 HTTPS，默认使用 HTTP。 */
     https?: boolean
@@ -35,7 +38,9 @@ export function createConnection(options: CreateConnectionOptions = {}): RivetCo
     const protocol = options.protocol ?? 'msgpack'
     let builder = new signalR.HubConnectionBuilder()
         .withUrl(resolveConnectionUrl(options))
-        .withAutomaticReconnect()
+        .withAutomaticReconnect({
+            nextRetryDelayInMilliseconds: () => reconnectIntervalMs,
+        })
 
     if (protocol === 'msgpack') {
         builder = builder.withHubProtocol(new MessagePackHubProtocol())
@@ -54,12 +59,17 @@ export function createConnection(options: CreateConnectionOptions = {}): RivetCo
 export function resolveConnectionUrl(options: CreateConnectionOptions = {}): string {
     if (options.url) return options.url
 
-    const scheme = options.https ? 'https' : 'http'
-    const host = options.host ?? 'localhost'
-    const port = options.port ?? 9710
     const bridgePath = normalizeBridgePath(options.bridgePath ?? '/bridge')
 
-    return `${scheme}://${host}:${port}${bridgePath}`
+    if (!options.host && !options.port) {
+        return bridgePath
+    }
+
+    const scheme = options.https ? 'https' : 'http'
+    const host = options.host ?? 'localhost'
+    const port = options.port ? `:${options.port}` : ''
+
+    return `${scheme}://${host}${port}${bridgePath}`
 }
 
 /** 规范化 SignalR Hub 路径，保证以 `/` 开头。 */

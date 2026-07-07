@@ -12,8 +12,7 @@ Tauri v2 壳子负责将 Rivet 应用打包为桌面程序：
 
 - 使用系统自带 WebView2 渲染前端 UI（约 3MB 打包体积）
 - 通过 sidecar 机制拉起 .NET 后端进程
-- 前端构建产物位于 `../../../web/apps/rivet.stress.test/dist`
-- 开发模式加载 `http://localhost:9720`
+- 前端构建产物和开发模式地址由 `@rivet/cli` 写入临时 Tauri 配置
 
 ## 编码要求
 
@@ -21,4 +20,4 @@ Tauri v2 壳子负责将 Rivet 应用打包为桌面程序：
 - `tauri.conf.json` 修改时注意 `frontendDist` 和 `devUrl` 路径的正确性
 - sidecar 配置在 `plugins.shell.sidecar` 中，命令名需与 .NET 发布产物名一致
 - 当前阶段 sidecar 启动代码已注释（TODO），待 .NET 发布流程确定后启用
-- Tauri 壳层后期可能沉淀为模板或由 `@rivet/shell` CLI 生成，业务前端项目只通过脚本和配置使用壳能力，不在运行时代码中 import Rust 工程
+- Tauri 壳层后期可能沉淀为模板，业务前端项目通过 `@rivet/cli` 调用壳能力，不在运行时代码中 import Rust 工程

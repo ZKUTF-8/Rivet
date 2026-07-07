@@ -8,19 +8,25 @@ alwaysApply: false
 
 ## 项目定位
 
-前端核心实现是 Rivet 框架的浏览器端通信层。当前阶段可以放在 `src/web/core` 或 workspace 本地包 `src/web/packages/rivet-client` 中供业务应用引用；未来稳定后发布为 `@rivet/client`。职责：
+前端核心实现是 Rivet 框架的浏览器端通信层。当前阶段放在 `src/web/core/rivet.client` 中供业务应用引用；未来稳定后发布为 `@rivet/client`。职责：
 
 - `connection.ts` — SignalR 连接管理，支持 MessagePack / JSON 协议切换
-- `useBindable.ts` — 将服务端变量映射为 Vue 响应式 `ref`
-- `useCall.ts` — 封装服务端方法调用，追踪加载状态和往返延迟
-- `createBackend()` — 初始化连接并向 Vue 应用注入全局 `rv` 对象
+- `runtime.ts` — 将服务端变量映射为 Vue 响应式 `ref`，封装后端方法调用和连接状态
+- `createBackend()` — 初始化连接并向 Vue 应用注入生成的全局 `rv` 对象
 
 ## 编码要求
 
 - 所有导出的函数和类型使用 TSDoc 注释（`/** ... */`），中文说明
+- 内部状态、内部函数、非导出常量也需要中文 JSDoc/TSDoc 或必要注释，说明职责、生命周期或协议边界
+- Vue `<script setup>` 中的顶层变量、计算属性、监听器和内部函数按组件内部成员处理；注释解释意图，不要翻译代码
 - 使用 Vue 3 Composition API（`ref`、`computed` 等）
 - 函数命名：`use` 前缀表示 Composable（如 `useBindable`、`useCall`）
 - 类型导出：使用 `export type` 明确区分类型导出和值导出
 - 不要在此包中引入 UI 框架依赖（如 Element Plus），保持纯逻辑层
 - `vue` 作为 `peerDependency`，不打包进产物
 - 对业务侧暴露的全局访问对象统一为 `rv`，不要再使用 `ms`
+- `@rivet/client` 是浏览器运行时，不依赖 `@rivet/cli`，不负责读写文件或生成代码
+- `createBackend()` 安装后必须自动连接；首次连接失败和连接后断线都要持续重试，内部固定重试间隔为 2 秒，不向业务层暴露重连间隔配置
+- 应用专属生成物默认写入前端项目 `.rivet/generated/rv.generated.ts`，由 `@rivet/cli/vite` 注入到 `@rivet/client/generated`
+- 业务入口不直接 import `rv.generated.ts`；`createBackend()` 默认通过生成入口创建全局 `rv`
+- 生成的 `rv.generated.ts` 只 import `@rivet/client` 的运行时类型和方法，不反向依赖 CLI

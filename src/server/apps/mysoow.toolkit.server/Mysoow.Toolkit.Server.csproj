@@ -5,6 +5,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <RivetContractOutputPath>$(MSBuildProjectDirectory)\.rivet\rivet.contract.json</RivetContractOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,6 +14,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\rivet.core\Rivet.Core.csproj" />
+        <ProjectReference Include="..\..\core\rivet.generator\Rivet.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <CompilerVisibleProperty Include="RivetContractOutputPath" />
     </ItemGroup>
 
 </Project>

@@ -8,17 +8,25 @@ alwaysApply: false
 
 ## 项目定位
 
-Rivet.Core 是服务端框架核心库，目标框架 `netstandard2.0`，未来会发布为 NuGet 包。它包含：
+Rivet.Core 是服务端框架核心库，当前目标框架 `net10.0`，未来稳定后再拆分发布为 NuGet 包。它包含：
 
 - `[JsCallable]` — 标记可从前端调用的方法
-- `[JsBindable]` — 标记需要前后端双向同步的字段
+- `[JsBindable]` — 可选标记，用于显式声明或后续扩展 `Rv<T>` 属性；公开 `Rv<T>` 属性默认暴露给前端
 - `[JsEvent]` — 标记需要推送到前端的事件
+- `Rv<T>` — 后端可绑定状态，业务代码通过 `Value` 读写并由框架同步到前端
 
 ## 编码要求
 
 - 所有 Attribute 类必须使用 `/// <summary>` XML 文档注释，中文说明用途和生成效果
 - 保持 API 极简，这些是用户直接接触的公开 API
-- 不要在此项目中引入 ASP.NET Core 依赖，保持 netstandard2.0 兼容性
+- Rivet.Core 的公开面要尽量小：除 Attribute、`Rv<T>`、`RivetOptions`、`AddRivet`、`MapRivet` 等业务项目必须直接使用的入口，以及 MessagePack 必须公开序列化的协议 DTO 外，其余类型优先 `internal`
+- 私有字段、私有方法、内部类型和内部成员也需要 XML 文档注释，说明职责、生命周期、线程边界或协议边界
+- 不要把单次调用的一行逻辑拆成私有函数；拆分方法应服务于真实复杂度、复用或明确的模块边界
+- Rivet 不创建业务服务实例，只使用已经注册到 DI 的 singleton 服务
+- 带 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 或公开 `Rv<T>` 状态的服务必须是 singleton
+- `[JsBindable]` 第一阶段只作为可选显式标记，标上后仍必须是公开实例 `Rv<T>` 属性
+- 后端监听地址和端口由 ASP.NET Core 宿主配置，`RivetOptions` 不包含 Host/Port
+- Rivet.Core 不内置 CORS 策略，不调用 `AddCors` / `UseCors`；跨域由应用层按实际前端地址、部署方式和安全策略显式配置
 - 新增 Attribute 时参考现有三个的命名模式：`Js` + 动词/形容词 + `Attribute`
 
 ## 命名规范

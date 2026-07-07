@@ -1,7 +1,7 @@
 import { defineConfig, type UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import type { RivetConfig } from '@rivet/shell/config'
+import type { RivetConfig } from '@rivet/cli/config'
 
 type RivetViteConfig = UserConfig & {
     rivet?: RivetConfig
@@ -35,11 +35,6 @@ export default defineConfig({
         server: {
             url: 'http://localhost:9710', // 后端服务根地址；前端代理和后续壳子 sidecar 都围绕这个地址工作。
             bridgePath: '/bridge', // SignalR Hub 路径；当前压测服务和未来 Rivet bridge 默认都使用这个端点。
-            process: {
-                command: 'dotnet', // 后续需要自动拉起后端进程时使用；当前开发阶段仍手动启动 server。
-                args: ['run', '--project', '../../../server/apps/rivet.stress.test.server/Rivet.StressTest.Server.csproj'], // 后端启动参数；路径相对当前业务前端项目。
-                cwd: '.', // 后端进程工作目录；当前保留业务前端项目目录，后续可切到 server 项目目录。
-            },
         },
         shell: {
             enabled: true, // 当前业务是否启用 Tauri 壳子能力；`dev:shell` 会读取这组配置。

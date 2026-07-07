@@ -1,6 +1,6 @@
 # Rivet 框架设计思路
 
-Rivet 的目标是让上位机项目用 .NET 写本地服务和硬件业务，用 Vue 写界面，用 Tauri 做可选桌面壳。框架本身不应该和具体业务绑定，业务项目只引用需要的核心能力。
+Rivet 的目标是让上位机项目用 .NET 写本地服务和硬件业务，用 Vue 写界面，用 Tauri 做可选桌面壳。框架本身不和具体业务绑定，业务项目只引用需要的核心能力。
 
 ## 目录结构
 
@@ -8,107 +8,114 @@ Rivet 的目标是让上位机项目用 .NET 写本地服务和硬件业务，�
 src/
   server/
     core/
-      rivet.core/                 # 服务端核心：Attribute、宿主、Bridge、运行时注册表
-      rivet.generator/            # Source Generator：扫描 C# 标记并生成桥接代码
+      rivet.core/                 # 服务端核心：Attribute、Rv<T>、宿主、Bridge、运行时
+      rivet.generator/            # Source Generator：扫描 C# 标记并生成 rivet.contract.json
     apps/
       rivet.stress.test.server/   # 压测服务，用来验证通信性能
       mysoow.toolkit.server/      # 真实业务服务示例，验证应用层使用方式
 
   web/
     core/
-      rivet.client/               # 前端运行时核心，未来发布 @rivet/client
-      rivet.shell/                # shell CLI，未来发布 @rivet/shell
+      rivet.client/               # 浏览器运行时，未来发布 @rivet/client
+      rivet.cli/                  # 开发 CLI，未来发布 @rivet/cli
+      rivet.shell/                # 壳能力包，未来发布 @rivet/shell
     apps/
-      rivet.stress.test/          # 压测前端，用来验证通信性能
-      mysoow.toolkit/             # 真实业务前端入口，Vue + Ant Design Vue + Vite
+      rivet.stress.test/          # 压测前端
+      mysoow.toolkit/             # 真实业务前端入口
 
   shell/
     core/
-      rivet.shell/                # Tauri 壳工程，后续可作为模板由 @rivet/shell 生成
+      rivet.shell/                # Tauri 壳工程，后续可作为模板复用
 ```
 
-目录使用小写加点号，贴近 .NET 项目命名，也能统一 server、web、shell 三层的视觉风格。语言内部仍按各自生态命名：C# 用 PascalCase，Rust crate 用 snake_case，npm 包按 npm 规范。
+目录使用小写加点号。语言内部仍按各自生态命名：C# 用 PascalCase，Rust crate 使用 snake_case，npm 包按 npm 规范。
 
-## 分层原则
+## 后端模型
 
-- `server/core` 是服务端框架能力，业务服务引用它，不把业务代码写进核心。
-- `web/core` 是前端框架能力，业务前端引用它，不直接散落 SignalR 细节。
-- `shell/core` 是桌面壳能力，业务前端通过 `@rivet/shell` CLI 或脚本使用它，而不是在浏览器代码里 import Rust 工程。
-- `apps` 下放真实业务或验证程序。`rivet.stress.test` 验证性能边界，`mysoow.toolkit` 后续作为真实业务验证项目。
-
-`mysoow.toolkit.server` 不是传统 Web API 项目，不写 Controller，也不让业务层处理 Hub 路由。它是一个控制台应用，仍然使用 ASP.NET Core 原生的 `WebApplication.CreateBuilder(args)`；Rivet 只通过 `AddRivet` 注入服务，通过 `MapRivet` 挂载通信端点。SignalR、CORS、Bridge Hub 等由 `Rivet.Core` 内部封装，业务层只表达变量和方法，通信实现仍然可以在框架内部演进。
-
-当前服务端应用支持两种使用方式：
+业务服务由用户注册到 DI。Rivet 不创建业务实例，只扫描和使用已经注册的 singleton 服务：
 
 ```csharp
-// 推荐模式：沿用 ASP.NET Core 原生入口，只把 Rivet 当作服务注入进去。
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddRivet(rivet =>
+builder.Services.AddSingleton<ToolkitService>();
+
+builder.AddRivet(options =>
 {
-    rivet.UseApplication<ToolkitService>();
+    options.ApplicationName = "Mysoow.Toolkit Server";
+    options.BridgePath = "/bridge";
 });
 
 var app = builder.Build();
 app.MapRivet();
-await app.RunAsync();
+await app.RunAsync("http://localhost:9735");
 ```
 
-```csharp
-// 高级模式：按需覆盖端口、Bridge 路径或应用名称。
-var builder = WebApplication.CreateBuilder(args);
+Rivet 不负责后端监听端口，端口和地址由 ASP.NET Core 宿主、配置文件、环境变量或部署系统决定。`RivetOptions` 只保留 Bridge 路径、应用名称等框架内配置。跨域策略属于应用层，业务项目按自己的部署方式显式配置。
 
-builder.AddRivet(rivet =>
+第一阶段所有带 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 或公开 `Rv<T>` 状态的服务都必须是 singleton。未注册、scoped 或 transient 会在启动时失败。
+
+可绑定状态使用 `Rv<T>`：
+
+```csharp
+public sealed class ToolkitService
 {
-    rivet.Configure(options =>
+    public Rv<string> Message { get; } = new("后端初始值");
+
+    [JsCallable]
+    public string Echo(string value)
     {
-        options.Port = 9710;
-        options.BridgePath = "/bridge";
-        options.ApplicationName = "Mysoow.Toolkit Server";
-    })
-    .UseApplication<ToolkitService>();
-});
-
-var app = builder.Build();
-app.MapRivet();
-await app.RunAsync();
+        Message.Value = $"后端收到：{value}";
+        return Message.Value;
+    }
+}
 ```
 
-Rivet 不再提供自己的 `CreateBuilder` 包装。正式入口就是 ASP.NET Core 原生宿主，这样外部项目已有 Web API、后台任务、配置系统、日志系统或自定义中间件时，可以继续按原生方式组织，只是在合适位置调用 `AddRivet` 和 `MapRivet`。
+`Rv<T>.Value` 变化会通知前端。集合内部变化不会被普通 `List<T>.Add()` 自动捕获，第一阶段需要重新赋值或调用 `NotifyChanged()`。
 
-## 包和启动方式
+## 前端模型
 
-后期包形态建议拆成：
+前端业务运行时只依赖 `@rivet/client`，开发期依赖 `@rivet/cli`。`@rivet/client` 不读写文件，不依赖 CLI；应用专属生成物由 CLI 写入 `.rivet/generated`，再由 `@rivet/cli/vite` 插件把它接到运行时默认入口。
 
-- `Rivet.Core` / `Rivet.Hosting` / `Rivet.Generator`：NuGet 包，服务端业务引用。
-- `@rivet/client`：npm 包，前端业务运行时引用，提供连接管理和 `rv` 对象。不使用桌面壳时，业务前端只依赖这个包即可。
-- `@rivet/shell`：npm 工具包，提供统一的 `rivet` CLI，业务前端需要桌面壳或打包桌面程序时再引入。它可以依赖 `@rivet/client`，但业务代码如果直接 `import '@rivet/client'`，仍建议显式声明 `@rivet/client`。
+业务入口不需要导入生成文件：
 
-浏览器开发模式只需要启动服务和前端：
+```ts
+import { createBackend } from '@rivet/client'
+
+createApp(App)
+    .use(createBackend())
+    .mount('#app')
+```
+
+组件中直接使用全局 `rv`：
+
+```ts
+rv.toolkit.message.value = 'abc'
+await rv.toolkit.echo('abc')
+```
+
+`@rivet/client` 负责 SignalR 连接、连接状态、初始快照、变量 ref、方法调用和后端推送更新。`createBackend()` 安装后默认立即连接后端并拉取快照；通信协议默认使用 MessagePack。前端写变量时本地先更新，再调用后端 `SetVariable`；后端不会把同一次写入回推给发起连接。
+
+## 契约和生成
+
+契约源头在 C#。`rivet.generator` 编译期扫描 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 和公开 `Rv<T>` 属性，生成语言无关的 `rivet.contract.json`。运行时再校验这些服务是否已注册 singleton。
+
+`@rivet/cli` 读取 contract 生成 TypeScript：
 
 ```text
-dotnet run --project src/server/apps/mysoow.toolkit.server/Mysoow.Toolkit.Server.csproj
-pnpm --dir src/web --filter mysoow.toolkit dev
+C# Attribute
+  -> rivet.contract.json
+  -> @rivet/cli
+  -> .rivet/generated/rv.generated.ts
+  -> @rivet/cli/vite 注入 @rivet/client/generated
+  -> 业务代码使用 rv
 ```
 
-桌面开发模式由前端项目脚本调用 shell CLI：
+`rivet dev` 会先生成 TS，再启动 Vite，并监听 contract 变化继续更新生成文件。`rivet dev --shell` 在此基础上启动 Tauri 壳。
 
-```text
-pnpm --dir src/web --filter mysoow.toolkit dev:shell
-```
+## 包边界
 
-这个命令由 `@rivet/shell` 提供的 `rivet dev --shell` 编排：先启动本业务的 Vite dev server，确认 `devUrl` 可访问后，再启动 Tauri 壳。业务项目只保留简单的 package scripts，框架配置集中写在 `vite.config.ts` 的 `rivet` 字段里，用于配置前端端口、后端进程、打包命令和 sidecar 参数。开发阶段可以不自动拉起 server，开发者手动启动服务；打包阶段再根据配置发布 server、复制 sidecar、生成 Tauri 配置并构建桌面程序。
-
-`vite.config.ts` 是业务前端的配置入口。当前 `rivet` 字段先用于共享 Vite 端口、后端地址和壳子启动参数；后续 `@rivet/client` 如需读取这些配置，应通过 Vite 插件、虚拟模块或生成文件注入到浏览器代码中，而不是让浏览器运行时直接读取本地配置文件。
-
-## 代码生成归属
-
-TypeScript 代理和契约信息的源头在服务端，因为只有 C# 侧知道哪些方法、字段、事件被 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 暴露。
-
-MVP 阶段可以由 `Rivet.Generator` 直接生成前端需要的 `rv.generated.ts` 到业务前端配置的目录。后续再升级为：
-
-```text
-C# Attribute -> rivet.contract.json -> Vite plugin / @rivet/client 消费 -> 业务代码使用 rv
-```
-
-这样服务端负责定义契约，前端负责消费契约，边界清晰。
+- `Rivet.Core`：服务端运行时、特性、`Rv<T>`、Bridge Hub。
+- `Rivet.Generator`：生成 `rivet.contract.json`。
+- `@rivet/client`：浏览器运行时。
+- `@rivet/cli`：开发命令、TS 生成、Vite 编排。
+- `@rivet/shell`：壳能力包，被 CLI 调用，不在浏览器代码中使用。

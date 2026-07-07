@@ -20,6 +20,9 @@ importers:
         specifier: ^3.5.0
         version: 3.5.32(typescript@5.9.3)
     devDependencies:
+      '@rivet/cli':
+        specifier: workspace:*
+        version: link:../../core/rivet.cli
       '@rivet/shell':
         specifier: workspace:*
         version: link:../../core/rivet.shell
@@ -42,15 +45,21 @@ importers:
   apps/rivet.stress.test:
     dependencies:
       '@microsoft/signalr':
-        specifier: ^8.0.0
-        version: 8.0.17
+        specifier: ^10.0.0
+        version: 10.0.0
       '@microsoft/signalr-protocol-msgpack':
-        specifier: ^8.0.0
-        version: 8.0.17
+        specifier: ^10.0.0
+        version: 10.0.0
+      '@rivet/client':
+        specifier: workspace:*
+        version: link:../../core/rivet.client
       vue:
         specifier: ^3.5.0
         version: 3.5.32(typescript@5.9.3)
     devDependencies:
+      '@rivet/cli':
+        specifier: workspace:*
+        version: link:../../core/rivet.cli
       '@rivet/shell':
         specifier: workspace:*
         version: link:../../core/rivet.shell
@@ -70,14 +79,20 @@ importers:
         specifier: ^2.0.0
         version: 2.2.12(typescript@5.9.3)
 
+  core/rivet.cli:
+    dependencies:
+      '@rivet/shell':
+        specifier: workspace:*
+        version: link:../rivet.shell
+
   core/rivet.client:
     dependencies:
       '@microsoft/signalr':
-        specifier: ^8.0.0
-        version: 8.0.17
+        specifier: ^10.0.0
+        version: 10.0.0
       '@microsoft/signalr-protocol-msgpack':
-        specifier: ^8.0.0
-        version: 8.0.17
+        specifier: ^10.0.0
+        version: 10.0.0
       vue:
         specifier: ^3.5.0
         version: 3.5.32(typescript@5.9.3)
@@ -144,11 +159,11 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@microsoft/signalr-protocol-msgpack@8.0.17':
-    resolution: {integrity: sha512-mT7jhnK7r/KdXLnhXvXuA156nIVFwQnurOg4rbat5YTb+ribtmNVBni6XQl16pfWLGCF+VC0e+f8NJzZGJCGiA==}
+  '@microsoft/signalr-protocol-msgpack@10.0.0':
+    resolution: {integrity: sha512-N4h4BD+y9kw/iszpDaDaIRJpxaRSA5uBtveM6HUIwmwkeJIPOoMrPNvmj77UrjZHAsbVwa/acLiWnPDfffO3yQ==}
 
-  '@microsoft/signalr@8.0.17':
-    resolution: {integrity: sha512-5pM6xPtKZNJLO0Tq5nQasVyPFwi/WBY3QB5uc/v3dIPTpS1JXQbaXAQAPxFoQ5rTBFE094w8bbqkp17F9ReQvA==}
+  '@microsoft/signalr@10.0.0':
+    resolution: {integrity: sha512-0BRqz/uCx3JdrOqiqgFhih/+hfTERaUfCZXFB52uMaZJrKaPRzHzMuqVsJC/V3pt7NozcNXGspjKiQEK+X7P2w==}
 
   '@msgpack/msgpack@2.8.0':
     resolution: {integrity: sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==}
@@ -757,16 +772,16 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@microsoft/signalr-protocol-msgpack@8.0.17':
+  '@microsoft/signalr-protocol-msgpack@10.0.0':
     dependencies:
-      '@microsoft/signalr': 8.0.17
+      '@microsoft/signalr': 10.0.0
       '@msgpack/msgpack': 2.8.0
     transitivePeerDependencies:
       - bufferutil
       - encoding
       - utf-8-validate
 
-  '@microsoft/signalr@8.0.17':
+  '@microsoft/signalr@10.0.0':
     dependencies:
       abort-controller: 3.0.0
       eventsource: 2.0.2

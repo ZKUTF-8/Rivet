@@ -1,14 +1,16 @@
 import { defineConfig, type UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import type { RivetConfig } from '@rivet/shell/config'
+import type { RivetConfig } from '@rivet/cli/config'
+import { rivet } from '@rivet/cli/vite'
 
+/** Vite 用户配置扩展，允许样板项目在同一个文件里声明 Rivet 开发配置。 */
 type RivetViteConfig = UserConfig & {
     rivet?: RivetConfig
 }
 
 export default defineConfig({
-    plugins: [vue()],
+    plugins: [rivet(), vue()],
     resolve: {
         alias: {
             '@': resolve(import.meta.dirname!, 'src'),
@@ -33,13 +35,9 @@ export default defineConfig({
             dist: 'dist', // 前端构建输出目录；后续 Tauri build 会把它写入 frontendDist。
         },
         server: {
+            project: '../../../server/apps/mysoow.toolkit.server/Mysoow.Toolkit.Server.csproj',
             url: 'http://localhost:9735', // Mysoow.Toolkit 后端服务根地址。
             bridgePath: '/bridge', // Rivet Bridge Hub 路径。
-            process: {
-                command: 'dotnet', // 后续自动拉起后端进程时使用。
-                args: ['run', '--project', '../../../server/apps/mysoow.toolkit.server/Mysoow.Toolkit.Server.csproj'], // 后端启动参数；路径相对当前业务前端项目。
-                cwd: '.', // 后端进程工作目录；当前开发阶段保留前端项目目录。
-            },
         },
         shell: {
             enabled: true, // 当前业务是否启用 Tauri 壳子能力；`dev:shell` 会读取这组配置。

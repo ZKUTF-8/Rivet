@@ -10,14 +10,14 @@ alwaysApply: false
 
 Rivet.Generator 是 Roslyn Source Generator 项目，目标框架 `netstandard2.0`（Roslyn 要求）。职责：
 
-- 扫描标记了 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 的成员
-- 编译时自动生成 SignalR Hub 方法（C#）
-- 编译时自动生成 TypeScript 类型定义和代理函数
+- 扫描标记了 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 的成员，以及公开 `Rv<T>` 属性
+- 编译时生成语言无关的 `rivet.contract.json`
+- singleton 注入是否正确由 Rivet.Core 在运行时校验，不由 generator 判断
+- TypeScript 代理由前端 `@rivet/cli` 根据 contract 生成
 
 ## 编码要求
 
 - 使用 `IIncrementalGenerator`（增量生成器），不要用废弃的 `ISourceGenerator`
-- 生成的代码必须放在独立的 `partial class` 中，避免与用户代码冲突
-- 生成的 C# 代码添加 `[GeneratedCode]` 标记
+- contract 生成成功才覆盖旧文件，失败时保留上一份成功文件
+- contract 需要携带后端 XML 文档注释，供 `@rivet/cli` 生成前端 TSDoc；服务、变量、方法、参数和返回值说明都应尽量保留
 - 所有公开类和方法使用 XML 文档注释，中文说明
-- 当前阶段此项目为占位，核心逻辑待实现

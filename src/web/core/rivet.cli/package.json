@@ -1,0 +1,16 @@
+{
+    "name": "@rivet/cli",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "exports": {
+        "./config": "./src/config.ts",
+        "./vite": "./src/vite.ts"
+    },
+    "bin": {
+        "rivet": "./cli/rivet.js"
+    },
+    "dependencies": {
+        "@rivet/shell": "workspace:*"
+    }
+}

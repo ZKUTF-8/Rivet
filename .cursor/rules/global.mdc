@@ -16,7 +16,7 @@ alwaysApply: true
 Rivet 是一个 **.NET + Vue 上位机快速开发框架**，核心理念：
 
 - 后端用 .NET 处理硬件/业务逻辑，前端用 Vue 做 UI 渲染
-- 通过 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 三个特性标记，由 Source Generator 自动生成 SignalR Hub 方法和 TypeScript 代理
+- 通过 `[JsCallable]`、`[JsEvent]` 和公开 `Rv<T>` 属性声明后端契约，`[JsBindable]` 作为可选显式标记；由 Source Generator 生成 `rivet.contract.json`，再由 `@rivet/cli` 生成 TypeScript 代理
 - 开发者只需要写后端逻辑 + 前端 UI，中间的通信层完全自动化
 - Tauri 作为桌面壳子，通过 sidecar 拉起 .NET 进程
 
@@ -37,14 +37,19 @@ src/shell/      → 桌面壳层（Tauri 壳模板或可复用壳工程）
 ## 编码规范
 
 - **所有公开的类、方法、属性、字段必须使用 XML 文档注释（C#）或 JSDoc/TSDoc 注释（TypeScript），用中文描述其用途**
-- 私有成员如果逻辑不明显也应添加注释
+- C# 后端代码的可见性默认从最小范围开始：实现细节优先 `private`，跨文件内部协作优先 `internal`，只有业务项目必须直接引用的 API 才使用 `public`
+- 私有字段、私有方法、内部类型和内部成员也应使用 XML 文档注释说明职责、边界或设计原因；注释要解释意图，不要翻译代码
+- 前端 TypeScript/Vue 代码的组件内部状态、内部函数、非导出常量也应使用 JSDoc/TSDoc 或必要注释说明职责、边界或设计原因；`<script setup>` 中的顶层变量和函数按组件内部成员处理
+- 不要为了单次调用的一行逻辑额外封装私有方法；只有当抽象能表达清晰边界、隐藏复杂度或存在复用价值时才拆方法
 - 不要写多余的"翻译代码"注释（如 `// 返回结果`），只解释"为什么"而非"是什么"
 - 保持代码整洁，遵循各语言的命名规范
 
 ## 技术栈
 
-- .NET 10 (LTS)，核心库目标 netstandard2.0
+- .NET 10 (LTS)，核心库当前目标 net10.0，Source Generator 目标 netstandard2.0
 - Vue 3.5 + Vite 8 + TypeScript
 - Tauri v2
 - SignalR + MessagePack 二进制协议
 - pnpm workspace 管理前端包
+- 后端监听地址和端口由 ASP.NET Core 宿主配置，Rivet 只负责 Bridge Hub 路径，默认端点为 `/bridge`
+- Mysoow.Toolkit 样板当前由宿主监听 `http://localhost:9735`，前端使用 `http://localhost:9730`

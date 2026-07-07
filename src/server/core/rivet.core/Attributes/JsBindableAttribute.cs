@@ -3,13 +3,10 @@ using System;
 namespace Rivet.Core.Attributes;
 
 /// <summary>
-/// 标记一个字段用于 .NET 与前端 JavaScript 之间的双向同步。
-/// Source Generator 会自动生成：
-///   - 带变更追踪的属性 setter，值变化时通过 SignalR 推送到前端
-///   - Hub 方法，用于接收前端发来的属性修改
-///   - TypeScript 响应式绑定（Vue ref）
+/// 标记一个 Rv&lt;T&gt; 属性用于 .NET 与前端 JavaScript 之间的双向同步。
+/// Source Generator 会据此生成 TypeScript 响应式绑定。
 /// </summary>
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
 public sealed class JsBindableAttribute : Attribute
 {
     /// <summary>

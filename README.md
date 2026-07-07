@@ -23,8 +23,7 @@ public class DeviceService
     [JsCallable]
     public async Task<bool> StartCollection(int channel) { /* ... */ }
 
-    [JsBindable]
-    private double _temperature;
+    public Rv<double> Temperature { get; } = new(0);
 
     [JsEvent]
     public event Action<double[]> OnDataReceived;
@@ -62,14 +61,17 @@ dotnet run --project src/server/apps/mysoow.toolkit.server/Mysoow.Toolkit.Server
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton<ToolkitService>();
+
 builder.AddRivet(rivet =>
 {
-    rivet.UseApplication<ToolkitService>();
+    rivet.ApplicationName = "Mysoow.Toolkit Server";
+    rivet.BridgePath = "/bridge";
 });
 
 var app = builder.Build();
 app.MapRivet();
-await app.RunAsync();
+await app.RunAsync("http://localhost:9735");
 ```
 
 启动前端浏览器模式：

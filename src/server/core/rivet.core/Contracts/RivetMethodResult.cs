@@ -1,7 +1,7 @@
 namespace Rivet.Core;
 
 /// <summary>
-/// 前端调用后端业务方法的返回结果。
+/// 前端调用后端业务方法的返回结果。MessagePack 动态序列化要求 Hub 返回类型为公开类型。
 /// </summary>
 public sealed class RivetMethodResult
 {

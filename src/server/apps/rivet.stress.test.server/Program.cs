@@ -3,8 +3,6 @@ using Rivet.StressTest.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:9710");
-
 builder.Services.AddSignalR()
     .AddMessagePackProtocol();
 
@@ -29,4 +27,4 @@ app.MapHub<BridgeHub>("/bridge");
 
 app.MapGet("/", () => "Rivet StressTest Server is running.");
 
-app.Run();
+await app.RunAsync("http://localhost:9710");

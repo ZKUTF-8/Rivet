@@ -7,10 +7,6 @@
         "./client": "./src/client.ts",
         "./config": "./src/config.ts"
     },
-    "bin": {
-        "rivet": "./cli/rivet.js",
-        "rivet-shell": "./cli/rivet.js"
-    },
     "dependencies": {
         "@rivet/client": "workspace:*"
     }
