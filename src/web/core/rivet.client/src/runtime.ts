@@ -254,7 +254,6 @@ export function createRuntime(connection: RivetConnection): RivetRuntimeClient {
         try {
             status.value = status.value === 'reconnecting' ? 'reconnecting' : 'connecting'
             await connection.start({
-                retry: true,
                 shouldRetry: () => !stopped && version === lifecycleVersion,
                 onRetry: () => {
                     if (!stopped && version === lifecycleVersion) {
@@ -268,7 +267,13 @@ export function createRuntime(connection: RivetConnection): RivetRuntimeClient {
             }
 
             status.value = 'connected'
-            await refreshSnapshotSafely()
+
+            // 连接成功后尽力刷新快照；失败只记录日志，避免打断后续重连生命周期。
+            try {
+                await getSnapshot()
+            } catch (error) {
+                console.error('Rivet 初始变量快照获取失败：', error)
+            }
         } catch {
             if (stopped || version !== lifecycleVersion) {
                 status.value = 'disconnected'
@@ -278,15 +283,6 @@ export function createRuntime(connection: RivetConnection): RivetRuntimeClient {
             status.value = 'reconnecting'
         } finally {
             startTask = undefined
-        }
-    }
-
-    /** 连接成功后尽力刷新快照；失败只记录日志，避免打断后续重连生命周期。 */
-    async function refreshSnapshotSafely() {
-        try {
-            await getSnapshot()
-        } catch (error) {
-            console.error('Rivet 初始变量快照获取失败：', error)
         }
     }
 
@@ -330,22 +326,8 @@ function normalizeVariableState(raw: unknown): RivetVariableState {
 
     return {
         name: String(source.name ?? source.Name ?? ''),
-        value: normalizeValue(source.value ?? source.Value),
+        value: source.value ?? source.Value,
         type: String(source.type ?? source.Type ?? ''),
         updatedAt: Number(source.updatedAt ?? source.UpdatedAt ?? 0),
     }
-}
-
-/**
- * 统一 SignalR JSON 和 MessagePack 对日期值的前端表示。
- *
- * @param value SignalR 协议层返回的原始变量值。
- * @returns 前端运行时内部保存的变量值；日期对象会转成 ISO 字符串。
- */
-function normalizeValue(value: unknown): unknown {
-    if (value instanceof Date) {
-        return value.toISOString()
-    }
-
-    return value
 }

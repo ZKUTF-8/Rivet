@@ -7,10 +7,8 @@ export type Protocol = 'json' | 'msgpack'
 /** Rivet 内部固定重连间隔。 */
 const reconnectIntervalMs = 2000
 
-/** 启动 SignalR 连接时的重试控制。 */
+/** 启动 SignalR 连接时的生命周期控制。 */
 export interface StartConnectionOptions {
-    /** 首次连接失败后是否持续重试。 */
-    retry?: boolean
     /** 每次启动失败并准备重试前触发，用于上层同步状态。 */
     onRetry?: (error: unknown) => void
     /** 判断当前重试循环是否仍然有效，通常用于响应用户主动停止。 */
@@ -37,7 +35,7 @@ export interface CreateConnectionOptions {
 export interface RivetConnection {
     /** 底层 SignalR 连接，框架内部和调试阶段可以直接访问。 */
     connection: signalR.HubConnection
-    /** 启动连接；可选择让首次连接失败也按 Rivet 固定间隔持续重试。 */
+    /** 启动连接；首次连接失败也会按 Rivet 固定间隔持续重试。 */
     start(options?: StartConnectionOptions): Promise<void>
     /** 停止连接。 */
     stop(): Promise<void>
@@ -68,7 +66,7 @@ export function createConnection(options: CreateConnectionOptions = {}): RivetCo
 /** 启动底层 SignalR 连接，并补齐 SignalR 不处理的“首次连接失败”重试。 */
 async function startConnection(connection: signalR.HubConnection, options: StartConnectionOptions = {}): Promise<void> {
     while (true) {
-        if (options.retry && options.shouldRetry?.() === false) {
+        if (options.shouldRetry?.() === false) {
             return
         }
 
@@ -76,8 +74,8 @@ async function startConnection(connection: signalR.HubConnection, options: Start
             await connection.start()
             return
         } catch (error) {
-            if (!options.retry || options.shouldRetry?.() === false) {
-                throw error
+            if (options.shouldRetry?.() === false) {
+                return
             }
 
             options.onRetry?.(error)
