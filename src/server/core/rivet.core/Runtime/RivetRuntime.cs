@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rivet.Core.Attributes;
@@ -20,9 +19,9 @@ internal sealed class RivetRuntime
     private const BindingFlags AnyInstance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
     /// <summary>
-    /// 用于向所有 SignalR 连接广播后端变量变化。
+    /// 用于通过当前传输实现发布后端变量变化。
     /// </summary>
-    private readonly IHubContext<RivetBridgeHub> _hubContext;
+    private readonly IRivetVariablePublisher _variablePublisher;
 
     /// <summary>
     /// 应用宿主的 DI 容器，用于取得已注册的 singleton 服务实例。
@@ -49,11 +48,11 @@ internal sealed class RivetRuntime
     /// </summary>
     public RivetRuntime(
         IServiceProvider serviceProvider,
-        IHubContext<RivetBridgeHub> hubContext,
+        IRivetVariablePublisher variablePublisher,
         ILogger<RivetRuntime> logger)
     {
         _serviceProvider = serviceProvider;
-        _hubContext = hubContext;
+        _variablePublisher = variablePublisher;
         _logger = logger;
     }
 
@@ -111,11 +110,11 @@ internal sealed class RivetRuntime
     /// <summary>
     /// 从前端调用一个业务方法。
     /// </summary>
-    internal async Task<RivetMethodResult> InvokeAsync(string name, string? argsJson)
+    internal async Task<object?> InvokeAsync(string name, string? argsJson)
     {
         if (!_methods.TryGetValue(name, out var binding))
         {
-            return RivetMethodResult.Fail($"Rivet method '{name}' is not registered.");
+            throw new InvalidOperationException($"Rivet method '{name}' is not registered.");
         }
 
         try
@@ -128,12 +127,17 @@ internal sealed class RivetRuntime
                 result = ReadTaskResult(task);
             }
 
-            return RivetMethodResult.Ok(result);
+            return result;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            _logger.LogError(ex.InnerException, "Rivet method {MethodName} failed.", name);
+            throw new InvalidOperationException(ex.InnerException.Message, ex.InnerException);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Rivet method {MethodName} failed.", name);
-            return RivetMethodResult.Fail(ex.Message);
+            throw;
         }
     }
 
@@ -236,30 +240,7 @@ internal sealed class RivetRuntime
         }
 
         var state = binding.ToState();
-        _ = PublishVariableChangedAsync(state, change.ExcludedConnectionId);
-    }
-
-    /// <summary>
-    /// 将变量变化广播到前端；前端写入时会排除发起连接，避免原样回推。
-    /// </summary>
-    private async Task PublishVariableChangedAsync(RivetVariableState state, string? excludedConnectionId)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(excludedConnectionId))
-            {
-                await _hubContext.Clients.All.SendAsync(RivetHubEvents.VariableChanged, state).ConfigureAwait(false);
-                return;
-            }
-
-            await _hubContext.Clients.AllExcept(excludedConnectionId)
-                .SendAsync(RivetHubEvents.VariableChanged, state)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to publish Rivet variable {VariableName}.", state.Name);
-        }
+        _ = _variablePublisher.PublishVariableChangedAsync(state, change.ExcludedConnectionId);
     }
 
     /// <summary>
@@ -322,9 +303,7 @@ internal sealed class RivetRuntime
             return new RivetVariableState
             {
                 Name = Name,
-                Value = ToProtocolValue(_state.UntypedValue, _options),
-                Type = _state.ValueType.Name,
-                UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                Value = ToProtocolValue(_state.UntypedValue, _options)
             };
         }
 

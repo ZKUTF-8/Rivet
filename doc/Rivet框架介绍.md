@@ -239,7 +239,7 @@ async function openDevice() {
 - 生成 `rivet.contract.json`。
 - 前端生成 `rv.generated.ts`。
 - Vue 页面通过 `rv` 使用后端能力。
-- SignalR + MessagePack 负责通信。
+- 当前由 SignalR JSON 跑通通信，后续会抽象为可替换 transport，便于接入 C++ / Python 后端。
 - Tauri 壳负责桌面化验证。
 
 正在规划或后续补齐：

@@ -10,7 +10,7 @@ alwaysApply: false
 
 前端核心实现是 Rivet 框架的浏览器端通信层。当前阶段放在 `src/web/core/rivet.client` 中供业务应用引用；未来稳定后发布为 `@rivet/client`。职责：
 
-- `connection.ts` — SignalR 连接管理，支持 MessagePack / JSON 协议切换
+- `connection.ts` — SignalR 连接管理，当前核心运行时统一使用 JSON 协议
 - `runtime.ts` — 将服务端变量映射为 Vue 响应式 `ref`，封装后端方法调用和连接状态
 - `createBackend()` — 初始化连接并向 Vue 应用注入生成的全局 `rv` 对象
 

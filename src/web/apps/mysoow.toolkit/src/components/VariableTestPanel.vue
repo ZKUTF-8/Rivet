@@ -38,7 +38,7 @@ const messageValue = computed({
     get: () => rv.toolkit.message.value ?? '',
     set: (value: string) => {
         rv.toolkit.message.value = value
-        updateLocalSnapshot('toolkit.message', value, 'String')
+        updateLocalSnapshot('toolkit.message', value)
     },
 })
 
@@ -48,7 +48,7 @@ const counterValue = computed({
     set: (value: number | null) => {
         const nextValue = Number(value ?? 0)
         rv.toolkit.counter.value = nextValue
-        updateLocalSnapshot('toolkit.counter', nextValue, 'Int32')
+        updateLocalSnapshot('toolkit.counter', nextValue)
     },
 })
 
@@ -68,7 +68,7 @@ const variableRows = computed(() => Object.values(variableSnapshot.value))
 const toolkitMethods = computed<ToolkitMethod[]>(() => Object
     .entries(toolkitProxy as Record<string, unknown>)
     .flatMap(([label, value]) => {
-         if (typeof value !== 'function') return []
+        if (typeof value !== 'function') return []
         const call = value as (...args: string[]) => Promise<unknown>
         return [{
             key: `toolkit.${label}`,
@@ -111,7 +111,7 @@ watch(
     thisTimeValue,
     (value) => {
         if (!value) return
-        updateLocalSnapshot('toolkit.thisTime', value, 'DateTime')
+        updateLocalSnapshot('toolkit.thisTime', value)
     },
 )
 
@@ -121,19 +121,17 @@ async function refreshSnapshot() {
 }
 
 /** 前端直接写变量后同步本地列表，避免等待下一次快照刷新。 */
-function updateLocalSnapshot(name: string, value: unknown, type: string) {
+function updateLocalSnapshot(name: string, value: unknown) {
     variableSnapshot.value = {
         ...variableSnapshot.value,
         [name]: {
             name,
             value,
-            type,
-            updatedAt: Date.now(),
         },
     }
 }
 
-/** 按变量类型把后端原始值转换成适合表格展示的文本。 */
+/** 把后端原始值转换成适合表格展示的文本。 */
 function formatVariableValue(record: RivetVariableState) {
     return String(record.value ?? '')
 }
@@ -172,7 +170,6 @@ async function callParameterlessMethod(method: ToolkitMethod) {
                 row-key="name"
             >
                 <a-table-column title="变量" data-index="name" />
-                <a-table-column title="类型" data-index="type" />
                 <a-table-column title="值">
                     <template #default="{ record }">
                         <a-input

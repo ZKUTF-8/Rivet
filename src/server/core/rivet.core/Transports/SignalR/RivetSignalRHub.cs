@@ -3,19 +3,19 @@ using Microsoft.AspNetCore.SignalR;
 namespace Rivet.Core;
 
 /// <summary>
-/// Rivet 内置 Bridge Hub。业务项目不直接依赖这个类型，由 MapRivet 自动注册。
+/// Rivet 当前的 SignalR 传输端点。业务项目不直接依赖这个类型，由 MapRivet 自动注册。
 /// </summary>
-internal sealed class RivetBridgeHub : Hub
+internal sealed class RivetSignalRHub : Hub
 {
     /// <summary>
-    /// Bridge Hub 委托的运行时注册表，负责真正的变量读写和方法调用。
+    /// 传输端点委托的运行时注册表，负责真正的变量读写和方法调用。
     /// </summary>
     private readonly RivetRuntime _runtime;
 
     /// <summary>
-    /// 创建 Bridge Hub 实例。
+    /// 创建 SignalR 传输端点实例。
     /// </summary>
-    public RivetBridgeHub(RivetRuntime runtime)
+    public RivetSignalRHub(RivetRuntime runtime)
     {
         _runtime = runtime;
     }
@@ -37,11 +37,18 @@ internal sealed class RivetBridgeHub : Hub
     }
 
     /// <summary>
-    /// 调用一个业务方法。
+    /// 调用一个业务方法，成功时直接返回业务值，失败时交给 SignalR 错误通道。
     /// </summary>
-    public Task<RivetMethodResult> InvokeMethod(string name, string? argsJson)
+    public async Task<object?> InvokeMethod(string name, string? argsJson)
     {
-        return _runtime.InvokeAsync(name, argsJson);
+        try
+        {
+            return await _runtime.InvokeAsync(name, argsJson).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            throw new HubException(ex.Message);
+        }
     }
 
     /// <summary>
@@ -49,7 +56,7 @@ internal sealed class RivetBridgeHub : Hub
     /// </summary>
     public override async Task OnConnectedAsync()
     {
-        await Clients.Caller.SendAsync(RivetHubEvents.InitialState, _runtime.GetSnapshot());
+        await Clients.Caller.SendAsync(RivetProtocolEvents.InitialState, _runtime.GetSnapshot());
         await base.OnConnectedAsync();
     }
 }

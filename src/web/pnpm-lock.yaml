@@ -87,9 +87,6 @@ importers:
       '@microsoft/signalr':
         specifier: ^10.0.0
         version: 10.0.0
-      '@microsoft/signalr-protocol-msgpack':
-        specifier: ^10.0.0
-        version: 10.0.0
       vue:
         specifier: ^3.5.0
         version: 3.5.32(typescript@5.9.3)

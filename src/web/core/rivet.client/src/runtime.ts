@@ -11,20 +11,6 @@ export interface RivetVariableState {
     name: string
     /** 当前变量值。 */
     value: unknown
-    /** 后端类型名。 */
-    type: string
-    /** 服务端更新时间戳。 */
-    updatedAt: number
-}
-
-/** 后端方法调用结果。 */
-export interface RivetMethodResult<T = unknown> {
-    /** 调用是否成功。 */
-    success: boolean
-    /** 方法返回值。 */
-    value?: T
-    /** 失败原因。 */
-    error?: string
 }
 
 /** Rivet 浏览器端运行时客户端。 */
@@ -170,26 +156,14 @@ export function createRuntime(connection: RivetConnection): RivetRuntimeClient {
     }
 
     /**
-     * 调用后端公开方法，并把统一方法结果解包成业务返回值。
+     * 调用后端公开方法，成功时直接返回业务返回值。
      *
      * @param name 后端契约中的方法 key，例如 `toolkit.echo`。
      * @param args 按顺序传给后端方法的参数列表，调用前会整体序列化为 JSON。
-     * @returns 后端方法成功执行后的业务返回值；失败时抛出后端返回的错误。
+     * @returns 后端方法成功执行后的业务返回值；失败时由底层传输抛出错误。
      */
     async function call<T>(name: string, args: unknown[] = []): Promise<T> {
-        const raw = await connection.connection.invoke('InvokeMethod', name, JSON.stringify(args))
-        const source = (raw ?? {}) as Record<string, unknown>
-        const result: RivetMethodResult<T> = {
-            success: Boolean(source.success ?? source.Success),
-            value: (source.value ?? source.Value) as T,
-            error: (source.error ?? source.Error) as string | undefined,
-        }
-
-        if (!result.success) {
-            throw new Error(result.error ?? `Rivet method '${name}' failed.`)
-        }
-
-        return result.value as T
+        return await connection.connection.invoke<T>('InvokeMethod', name, JSON.stringify(args))
     }
 
     /**
@@ -217,7 +191,7 @@ export function createRuntime(connection: RivetConnection): RivetRuntimeClient {
     /**
      * 应用单个变量变化；远程更新只触发 ref，不再调用前端 setter 写回后端。
      *
-     * @param raw 后端推送的变量状态，可能来自 JSON 或 MessagePack 协议。
+     * @param raw 后端推送的变量状态。
      */
     function applyVariable(raw: unknown) {
         const state = normalizeVariableState(raw)
@@ -296,10 +270,8 @@ export function createRuntime(connection: RivetConnection): RivetRuntimeClient {
     }
 }
 
-// TODO: 联调 JSON 和 MessagePack 时重点验证字段命名。MessagePack 可能直接保留后端 PascalCase 字段，
-// 而 JSON 通常会按后端序列化配置转成小驼峰；这里的兼容逻辑需要用真实协议输出再确认一遍。
 /**
- * 兼容 SignalR 不同协议返回的快照结构，并统一补齐变量 key。
+ * 统一 SignalR 返回的快照结构，并补齐变量 key。
  *
  * @param raw SignalR 返回的原始快照；连接异常或后端空响应时可能为空。
  * @returns 以变量 key 索引、每一项都符合前端 `RivetVariableState` 形状的快照。
@@ -316,18 +288,16 @@ function normalizeSnapshot(raw: Record<string, unknown> | undefined): Record<str
 }
 
 /**
- * 把后端变量状态转换成前端固定的小驼峰协议形状。
+ * 把后端变量状态转换成前端固定协议形状。
  *
- * @param raw 单个后端变量状态，兼容 PascalCase 和 camelCase 字段。
+ * @param raw 单个后端变量状态。
  * @returns 字段名已归一化的前端变量状态。
  */
 function normalizeVariableState(raw: unknown): RivetVariableState {
     const source = (raw ?? {}) as Record<string, unknown>
 
     return {
-        name: String(source.name ?? source.Name ?? ''),
-        value: source.value ?? source.Value,
-        type: String(source.type ?? source.Type ?? ''),
-        updatedAt: Number(source.updatedAt ?? source.UpdatedAt ?? 0),
+        name: String(source.name ?? ''),
+        value: source.value,
     }
 }

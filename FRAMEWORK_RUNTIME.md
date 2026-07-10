@@ -8,7 +8,7 @@
 - `rivet.generator` 在后端构建时生成 `.rivet/rivet.contract.json`。
 - `@rivet/cli` 提供 `rivet` 命令，负责生成 `.rivet/generated/rv.generated.ts`、启动 Vite，并在需要时启动 Tauri。
 - `@rivet/cli/vite` 提供 `rivet()` 插件，把隐藏生成物注入到 `@rivet/client` 的默认生成入口。
-- `@rivet/client` 是浏览器运行时，只负责连接、变量同步和方法调用。
+- `@rivet/client` 是浏览器运行时，只负责连接、变量同步和方法调用；当前核心运行时统一使用 SignalR JSON。
 - `@rivet/client` 安装后自动连接；首次连接失败和已连接后的断线都会按内部固定 2 秒间隔持续重试。
 - `src/shell/core/rivet.shell` 是 CLI 在壳子模式下调用的内置 Tauri 壳工程，不再保留单独的 `@rivet/shell` npm 包。
 
@@ -88,5 +88,5 @@ RIVET_BRIDGE_PATH
 
 - 生成失败：看后端项目 `.rivet/rivet.contract.json`、前端项目 `.rivet/generated/rv.generated.ts` 和 `src/web/core/rivet.cli/cli/rivet.js`。
 - 前端连接失败：看 `src/web/core/rivet.client/src/runtime.ts` 和 Vite proxy。
-- Hub 行为异常：看 `src/server/core/rivet.core/Bridge` 和 `Runtime`。
+- 传输端点行为异常：看 `src/server/core/rivet.core/Transports`、`Protocol` 和 `Runtime`。
 - 壳子没加载正确地址：看 `.rivet/tauri.dev.conf.json` 和 `src/shell/core/rivet.shell/tauri.conf.json`。

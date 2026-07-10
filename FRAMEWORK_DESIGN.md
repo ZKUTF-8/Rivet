@@ -8,7 +8,7 @@ Rivet 的目标是让上位机项目用 .NET 写本地服务和硬件业务，�
 src/
   server/
     core/
-      rivet.core/                 # 服务端核心：Attribute、Rv<T>、宿主、Bridge、运行时
+      rivet.core/                 # 服务端核心：Attribute、Rv<T>、宿主、传输端点、运行时
       rivet.generator/            # Source Generator：扫描 C# 标记并生成 rivet.contract.json
     apps/
       rivet.stress.test.server/   # 压测服务，用来验证通信性能
@@ -49,7 +49,7 @@ app.MapRivet();
 await app.RunAsync("http://localhost:9735");
 ```
 
-Rivet 不负责后端监听端口，端口和地址由 ASP.NET Core 宿主、配置文件、环境变量或部署系统决定。`RivetOptions` 只保留 Bridge 路径、应用名称等框架内配置。跨域策略属于应用层，业务项目按自己的部署方式显式配置。
+Rivet 不负责后端监听端口，端口和地址由 ASP.NET Core 宿主、配置文件、环境变量或部署系统决定。`RivetOptions` 只保留传输端点路径、应用名称等框架内配置。跨域策略属于应用层，业务项目按自己的部署方式显式配置。
 
 第一阶段所有带 `[JsCallable]`、`[JsBindable]`、`[JsEvent]` 或公开 `Rv<T>` 状态的服务都必须是 singleton。未注册、scoped 或 transient 会在启动时失败。
 
@@ -92,7 +92,7 @@ rv.toolkit.message.value = 'abc'
 await rv.toolkit.echo('abc')
 ```
 
-`@rivet/client` 负责 SignalR 连接、连接状态、初始快照、变量 ref、方法调用和后端推送更新。`createBackend()` 安装后默认立即连接后端并拉取快照；通信协议默认使用 MessagePack。前端写变量时本地先更新，再调用后端 `SetVariable`；后端不会把同一次写入回推给发起连接。
+`@rivet/client` 负责连接状态、初始快照、变量 ref、方法调用和后端推送更新。`createBackend()` 安装后默认立即连接后端并拉取快照；当前传输实现使用 SignalR JSON，后续会抽象为可替换 transport。前端写变量时本地先更新，再调用后端 `SetVariable`；后端不会把同一次写入回推给发起连接。
 
 ## 契约和生成
 
@@ -113,7 +113,7 @@ C# Attribute
 
 ## 包边界
 
-- `Rivet.Core`：服务端运行时、特性、`Rv<T>`、Bridge Hub。
+- `Rivet.Core`：服务端运行时、特性、`Rv<T>`、传输端点。
 - `Rivet.Generator`：生成 `rivet.contract.json`。
 - `@rivet/client`：浏览器运行时。
 - `@rivet/cli`：开发命令、TS 生成、Vite 编排，并在壳子模式下调用内置 Tauri 壳工程。

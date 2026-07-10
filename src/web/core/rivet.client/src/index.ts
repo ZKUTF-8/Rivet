@@ -2,7 +2,6 @@ export {
     createConnection,
     resolveConnectionUrl,
     type CreateConnectionOptions,
-    type Protocol,
     type RivetConnection,
     type StartConnectionOptions,
 } from './connection'
@@ -10,7 +9,6 @@ export {
 export {
     createRuntime,
     type RivetConnectionStatus,
-    type RivetMethodResult,
     type RivetRuntimeClient,
     type RivetVariableState,
 } from './runtime'

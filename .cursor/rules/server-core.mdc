@@ -19,7 +19,7 @@ Rivet.Core 是服务端框架核心库，当前目标框架 `net10.0`，未来�
 
 - 所有 Attribute 类必须使用 `/// <summary>` XML 文档注释，中文说明用途和生成效果
 - 保持 API 极简，这些是用户直接接触的公开 API
-- Rivet.Core 的公开面要尽量小：除 Attribute、`Rv<T>`、`RivetOptions`、`AddRivet`、`MapRivet` 等业务项目必须直接使用的入口，以及 MessagePack 必须公开序列化的协议 DTO 外，其余类型优先 `internal`
+- Rivet.Core 的公开面要尽量小：除 Attribute、`Rv<T>`、`RivetOptions`、`AddRivet`、`MapRivet` 等业务项目必须直接使用的入口，以及当前传输协议必须公开序列化的模型外，其余类型优先 `internal`
 - 私有字段、私有方法、内部类型和内部成员也需要 XML 文档注释，说明职责、生命周期、线程边界或协议边界
 - 不要把单次调用的一行逻辑拆成私有函数；拆分方法应服务于真实复杂度、复用或明确的模块边界
 - Rivet 不创建业务服务实例，只使用已经注册到 DI 的 singleton 服务

@@ -1,9 +1,9 @@
 namespace Rivet.Core;
 
 /// <summary>
-/// Rivet Bridge Hub 推送到前端的事件名。
+/// Rivet 协议推送到前端的事件名，不绑定具体传输实现。
 /// </summary>
-internal static class RivetHubEvents
+internal static class RivetProtocolEvents
 {
     /// <summary>
     /// 初始状态事件。

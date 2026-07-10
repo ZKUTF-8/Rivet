@@ -50,7 +50,7 @@ src/shell/      → 桌面壳层（Tauri 壳模板或可复用壳工程）
 - .NET 10 (LTS)，核心库当前目标 net10.0，Source Generator 目标 netstandard2.0
 - Vue 3.5 + Vite 8 + TypeScript
 - Tauri v2
-- SignalR + MessagePack 二进制协议
+- SignalR JSON 协议；后续跨语言版本会把传输层抽象成可替换 transport
 - pnpm workspace 管理前端包
-- 后端监听地址和端口由 ASP.NET Core 宿主配置，Rivet 只负责 Bridge Hub 路径，默认端点为 `/bridge`
+- 后端监听地址和端口由 ASP.NET Core 宿主配置，Rivet 只负责传输端点路径，默认端点为 `/bridge`
 - Mysoow.Toolkit 样板当前由宿主监听 `http://localhost:9735`，前端使用 `http://localhost:9730`

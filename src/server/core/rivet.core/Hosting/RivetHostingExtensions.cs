@@ -18,14 +18,19 @@ public static class RivetHostingExtensions
         configure?.Invoke(options);
 
         builder.Services.TryAddSingleton<RivetRuntime>();
+        builder.Services.TryAddSingleton<IRivetVariablePublisher, RivetSignalRVariablePublisher>();
         builder.Services.AddSingleton(new RivetRegistration(options, builder.Services));
-        builder.Services.AddSignalR().AddMessagePackProtocol();
+        builder.Services.AddSignalR()
+            .AddJsonProtocol(protocolOptions =>
+            {
+                protocolOptions.PayloadSerializerOptions = RivetJson.Options;
+            });
 
         return builder;
     }
 
     /// <summary>
-    /// 在 WebApplication 上挂载 Rivet Bridge Hub 和默认健康检查端点。
+    /// 在 WebApplication 上挂载 Rivet 传输端点和默认健康检查端点。
     /// </summary>
     public static WebApplication MapRivet(this WebApplication app)
     {
@@ -39,7 +44,7 @@ public static class RivetHostingExtensions
             ? registration.Options.BridgePath
             : $"/{registration.Options.BridgePath}";
 
-        app.MapHub<RivetBridgeHub>(bridgePath);
+        app.MapHub<RivetSignalRHub>(bridgePath);
         app.MapGet("/", () => $"{registration.Options.ApplicationName} is running.");
 
         return app;
