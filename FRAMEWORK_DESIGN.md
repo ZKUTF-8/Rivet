@@ -12,7 +12,7 @@ src/
       rivet.generator/            # Source Generator：扫描 C# 标记并生成 rivet.contract.json
     apps/
       rivet.stress.test.server/   # 压测服务，用来验证通信性能
-      mysoow.toolkit.server/      # 真实业务服务示例，验证应用层使用方式
+      mysoow.toolkit.server/      # 首个内部工具落地应用的服务端
 
   web/
     core/
@@ -20,7 +20,7 @@ src/
       rivet.cli/                  # 开发 CLI，未来发布 @rivet/cli
     apps/
       rivet.stress.test/          # 压测前端
-      mysoow.toolkit/             # 真实业务前端入口
+      mysoow.toolkit/             # 首个内部工具落地应用的前端
 
   shell/
     core/

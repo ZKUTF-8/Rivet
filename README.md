@@ -42,9 +42,9 @@ rv.device.onDataReceived.listen((data) => { /* ... */ })
 </template>
 ```
 
-## 当前验证项目
+## 当前落地应用
 
-仓库内已经拆出一个真实业务样板 `Mysoow.Toolkit`，用于验证应用层是否可以只关心业务代码：
+`Mysoow.Toolkit` 是 Mysoow 内部工具，也是 Rivet 第一个真实落地的实验应用，用于持续验证应用层能否只关注业务代码：
 
 - 后端：`src/server/apps/mysoow.toolkit.server`
 - 前端：`src/web/apps/mysoow.toolkit`
