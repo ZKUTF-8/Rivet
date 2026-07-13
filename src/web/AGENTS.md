@@ -65,7 +65,7 @@ pnpm --dir src/web --filter rivet.stress.test build
 
 - 该应用是 Mysoow 内部工具，也是 Rivet 第一个真实落地的实验应用，不是一次性 Demo。
 - 开发服务器使用 `http://localhost:9730`，后端目标为 `http://localhost:9735`。
-- UI 基于 Ant Design Vue 构建，优先使用其组件和设计 token，业务样式在该体系上扩展。
+- UI 功能优先使用 `ant-design-vue` 提供的组件和能力完成，包括布局、表单、表格、弹窗、反馈和数据展示；只有现有组件无法满足明确业务需求时才新增自定义组件。业务样式基于 Ant Design Vue 的设计 token 扩展，不另建相互冲突的基础 UI 体系。
 - 通过 `createBackend()` 和生成的全局 `rv` 使用后端能力，不在组件中散落 SignalR 调用。
 - 业务入口不直接导入 `.rivet/generated/rv.generated.ts`，也不为了展示框架机制而泄漏运行时实现细节。
 - 后端公开契约变化后，重新生成代理并执行完整构建，确认模板、类型和运行时命名一致。
