@@ -39,8 +39,9 @@ cargo tree --manifest-path src\shell\core\rivet.shell\Cargo.toml
 需要本机安装：
 
 - Rust / Cargo
-- Tauri CLI
 - Node.js / pnpm
+
+通过 `pnpm dev:shell` 启动时，`@rivet/cli` 会检查 Tauri CLI；如果当前用户环境尚未安装或版本不一致，会提示后通过 Cargo 自动安装 `Cargo.toml` 中 `package.metadata.rivet.tauri-cli-version` 声明的版本。该过程需要能够访问 Rust crate 源，首次安装可能需要几分钟。
 
 当前机器可用以下命令检查：
 
