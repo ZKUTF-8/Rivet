@@ -71,7 +71,7 @@ contract 或 TS 生成失败时保留上一份成功文件，避免前端拿到�
 `rivet dev --shell` 在 `rivet dev` 的基础上启动：
 
 ```text
-cargo tauri dev --config .rivet/tauri.dev.conf.json
+@rivet/cli 调用本地 @tauri-apps/cli：tauri dev --config .rivet/tauri.dev.conf.json
 ```
 
 临时 Tauri 配置会写入业务前端项目的 `.rivet/tauri.dev.conf.json`，其中包含实际 `devUrl` 和 `frontendDist`。
