@@ -1,21 +1,23 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { closeVite, startVite } from "./dev-server.js";
 
 /** 启动 Vite，等待监听完成后再启动 Tauri 壳。 */
 export async function runDevWithShell(context, webUrl, webHost, webPort, contractWatcher, packageRoot) {
-    const viteServer = await startVite(context.vite, context.viteConfigPath, webHost, webPort, context.projectCwd);
     const shellRoot = path.resolve(packageRoot, "../../../shell/core/rivet.shell");
-    const shellManifestPath = path.join(shellRoot, "Cargo.toml");
-    const cargoCwd = path.dirname(shellManifestPath);
+    /** @tauri-apps/cli npm 包提供的本地 CLI 入口。 */
+    const tauriCliPath = fileURLToPath(import.meta.resolve("@tauri-apps/cli/tauri.js"));
+
+    const viteServer = await startVite(context.vite, context.viteConfigPath, webHost, webPort, context.projectCwd);
     const tauriConfigPath = writeTauriDevConfig(context.projectCwd, webUrl, context.config);
 
     const shell = spawnChild(
-        resolveCargoCommand(),
-        ["tauri", "dev", "--config", tauriConfigPath],
+        process.execPath,
+        [tauriCliPath, "dev", "--config", tauriConfigPath],
         {
-            cwd: cargoCwd,
+            cwd: shellRoot,
             env: {
                 ...process.env,
                 RIVET_WEB_DEV_URL: webUrl,
@@ -78,11 +80,6 @@ function spawnChild(command, childArgs, options) {
         stdio: "inherit",
         shell: false,
     });
-}
-
-/** 解析 Cargo 可执行命令。 */
-function resolveCargoCommand() {
-    return process.platform === "win32" ? "cargo.exe" : "cargo";
 }
 
 /** Tauri 配置中的路径统一使用正斜杠，避免 Windows 反斜杠转义干扰。 */

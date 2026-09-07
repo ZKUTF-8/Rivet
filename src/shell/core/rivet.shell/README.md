@@ -39,15 +39,16 @@ cargo tree --manifest-path src\shell\core\rivet.shell\Cargo.toml
 需要本机安装：
 
 - Rust / Cargo
-- Tauri CLI
 - Node.js / pnpm
+
+Tauri CLI 由 `@rivet/cli` 通过 npm 依赖携带预编译的平台程序，`pnpm install` 后即可使用，无需再通过 Cargo 编译安装。
 
 当前机器可用以下命令检查：
 
 ```powershell
 rustc --version
 cargo --version
-cargo tauri --version
+pnpm --dir src\web\core\rivet.cli exec tauri --version
 node -v
 pnpm -v
 ```
@@ -65,7 +66,7 @@ pnpm -v
 }
 ```
 
-直接在壳子目录运行 `cargo tauri dev` 时，Tauri 会加载这个默认地址。业务前端通过 `@rivet/cli` 启动时，CLI 会根据业务项目的 `vite.config.ts` 生成 `.rivet/tauri.dev.conf.json`，并通过 `cargo tauri dev --config` 覆盖 `devUrl` 和 `frontendDist`。
+业务前端通过 `@rivet/cli` 启动时，CLI 会根据业务项目的 `vite.config.ts` 生成 `.rivet/tauri.dev.conf.json`，再调用本地 `@tauri-apps/cli` 执行 `tauri dev --config`，覆盖 `devUrl` 和 `frontendDist`。
 
 业务前端可以直接通过统一 CLI 启动浏览器模式：
 
@@ -118,7 +119,7 @@ cargo check --manifest-path src\shell\core\rivet.shell\Cargo.toml
 查看 Tauri CLI 版本：
 
 ```powershell
-cargo tauri --version
+pnpm --dir src\web\core\rivet.cli exec tauri --version
 ```
 
 ## 后续方向
