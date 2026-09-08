@@ -2,6 +2,8 @@
 
 本文说明当前第一阶段开发运行机制。长期架构见 `FRAMEWORK_DESIGN.md`。
 
+拟建设的 Rust 核心内置服务、多语言接入和组件范围见 [框架需求](doc/Rivet框架需求.md)。这些是后续目标，不代表当前已实现；本文仍记录现有运行流程。
+
 ## 核心边界
 
 - 业务后端项目负责注册 singleton 服务、配置 ASP.NET Core 监听地址、调用 `AddRivet` 和 `MapRivet`。
