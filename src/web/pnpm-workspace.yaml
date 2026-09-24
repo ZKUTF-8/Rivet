@@ -1,6 +1,5 @@
 packages:
   - 'core/*'
-  - 'packages/*'
   - 'apps/*'
 allowBuilds:
   core-js: false
