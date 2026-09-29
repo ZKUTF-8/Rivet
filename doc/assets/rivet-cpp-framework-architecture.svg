@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1300" viewBox="0 0 1600 1300" role="img" aria-labelledby="title desc">
+  <title id="title">Rivet 框架总体设计：桌面壳统一托管前后端，C++ 核心内置 Socket 服务</title>
+  <desc id="desc">桌面壳是统一托管前后端的外层容器，一次启动前端页面与后端程序，统一管理退出。左侧为 Vue Web 前端，业务页面复用公司 UI、文件选择和基础图表，通过 Web 核心调用、绑定和订阅。右侧为 C++11 后端，C++ 核心连接业务应用和文件 IO 模块。两个核心之间向右传递方法调用与状态写入，向左返回结果、状态、事件与波形。Socket 服务由 C++ 核心提供，C++ 应用通过核心接口读取运行监控信息。底部单独展示开发时从 C++ 声明导出契约并生成 TypeScript 类型与代理的流程。</desc>
+  <defs>
+    <marker id="blueArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2864b4"/></marker>
+    <marker id="greenArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#24715b"/></marker>
+    <marker id="grayArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#748194"/></marker>
+    <style>
+      text { font-family: 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #202e40; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .subheading { font-size: 25px; font-weight: 700; }
+      .body { font-size: 22px; }
+      .small { font-size: 20px; }
+      .muted { fill: #5b6b7e; }
+      .white { fill: #ffffff; }
+      .center { text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="1600" height="1300" fill="#ffffff"/>
+  <text x="40" y="61" class="heading">Rivet 框架总体设计</text>
+  <text x="40" y="103" class="body muted">基础核心 = 桌面壳 + Web 核心 + C++ 核心；业务通过声明、调用与绑定接入</text>
+
+  <!-- 桌面壳统一托管前后端，后端核心内置 Socket 服务。 -->
+  <rect x="20" y="140" width="1560" height="830" rx="20" fill="#f6f5fb" stroke="#a99dca" stroke-width="2"/>
+  <text x="50" y="190" class="subheading" style="fill:#605184">桌面壳 · 前后端统一托管</text>
+  <text x="50" y="235" class="small muted">统一启动前后端 / 窗口与 WebView / 统一退出与打包</text>
+  <rect x="920" y="160" width="640" height="90" rx="12" fill="#f6f7f9" stroke="#d5dce5"/>
+  <text x="950" y="195" class="subheading">后端核心内置 Socket 服务</text>
+  <text x="950" y="233" class="small muted">应用调用核心接口配置、启动和停止服务</text>
+  <g transform="translate(0 140)">
+  <!-- 运行时：前后端分区与各自的业务、框架职责。 -->
+  <rect x="40" y="140" width="640" height="670" rx="18" fill="#f3f7fd" stroke="#bdd0e9" stroke-width="2"/>
+  <rect x="920" y="140" width="640" height="670" rx="18" fill="#f2f8f5" stroke="#b8d5c8" stroke-width="2"/>
+  <text x="80" y="195" class="heading" style="fill:#245b9e">前端</text>
+  <text x="190" y="195" class="subheading" style="fill:#245b9e">Vue / Web</text>
+  <text x="960" y="195" class="heading" style="fill:#24694f">后端</text>
+  <text x="1070" y="195" class="subheading" style="fill:#24694f">C++11</text>
+
+  <rect x="80" y="230" width="560" height="200" rx="12" fill="#ffffff" stroke="#c7d1de" stroke-width="2"/>
+  <text x="108" y="271" class="subheading">业务页面与交互</text>
+  <text x="108" y="307" class="small muted">开发页面逻辑，组合使用框架组件</text>
+  <rect x="108" y="342" width="155" height="58" rx="8" fill="#e8f0fc"/>
+  <rect x="281" y="342" width="155" height="58" rx="8" fill="#e8f0fc"/>
+  <rect x="454" y="342" width="158" height="58" rx="8" fill="#e8f0fc"/>
+  <text x="185" y="378" class="small center" style="fill:#245b9e">公司 UI 框架</text>
+  <text x="358" y="378" class="small center" style="fill:#245b9e">文件选择组件</text>
+  <text x="533" y="378" class="small center" style="fill:#245b9e">基础图表组件</text>
+
+  <rect x="960" y="230" width="340" height="200" rx="12" fill="#ffffff" stroke="#c7d1de" stroke-width="2"/>
+  <text x="986" y="271" class="subheading">C++ 业务应用</text>
+  <text x="986" y="312" class="small muted">设备操作 · 业务逻辑</text>
+  <text x="986" y="351" class="small muted">方法 · 可观察变量 · 事件</text>
+  <text x="986" y="395" class="small" style="fill:#24694f">负责采集与业务处理</text>
+  <rect x="1320" y="230" width="200" height="200" rx="12" fill="#e5f1eb" stroke="#b8d5c8" stroke-width="2"/>
+  <text x="1342" y="271" class="subheading">文件 IO</text>
+  <text x="1342" y="312" class="small muted">目录与文件信息</text>
+  <text x="1342" y="351" class="small muted">路径与访问校验</text>
+  <text x="1342" y="395" class="small" style="fill:#24694f">框架公共模块</text>
+
+  <!-- 模块之间的实线表示运行时调用与数据返回。 -->
+  <path d="M 360 436 L 360 544" fill="none" stroke="#2864b4" stroke-width="3" marker-start="url(#blueArrow)" marker-end="url(#blueArrow)"/>
+  <text x="385" y="480" class="small" style="fill:#245b9e">rv 调用 / 变量绑定</text>
+  <text x="385" y="514" class="small" style="fill:#245b9e">事件订阅 / 界面更新</text>
+  <path d="M 1130 436 L 1130 544" fill="none" stroke="#24715b" stroke-width="3" marker-start="url(#greenArrow)" marker-end="url(#greenArrow)"/>
+  <text x="973" y="480" class="small" style="fill:#24694f">方法分发</text>
+  <text x="973" y="514" class="small" style="fill:#24694f">数据与监控</text>
+  <path d="M 1420 436 L 1420 544" fill="none" stroke="#24715b" stroke-width="3" marker-start="url(#greenArrow)" marker-end="url(#greenArrow)"/>
+  <text x="1240" y="480" class="small" style="fill:#24694f">统一注册</text>
+  <text x="1240" y="514" class="small" style="fill:#24694f">调用与结果</text>
+
+  <rect x="80" y="550" width="560" height="190" rx="12" fill="#2864b4"/>
+  <text x="108" y="592" class="small white">框架提供</text>
+  <text x="108" y="635" class="heading white">Rivet Web 核心</text>
+  <text x="108" y="678" class="body white">rv 访问入口 · Vue 响应式状态</text>
+  <text x="108" y="712" class="body white">连接与重连 · 调用及订阅管理</text>
+  <rect x="960" y="550" width="560" height="190" rx="12" fill="#24715b"/>
+  <text x="988" y="592" class="small white">框架提供 · 内置 Socket 服务</text>
+  <text x="988" y="635" class="heading white">Rivet C++ 核心</text>
+  <text x="988" y="678" class="body white">调用与事件分发 · 状态同步与节流</text>
+  <text x="988" y="712" class="body white">缓存与任务调度 · 运行监控接口</text>
+
+  <!-- 核心间的两条单向箭头明确区分请求与返回方向。 -->
+  <text x="800" y="584" class="small center" style="fill:#245b9e">方法调用 / 状态写入</text>
+  <path d="M 646 611 L 953 611" fill="none" stroke="#2864b4" stroke-width="4" marker-end="url(#blueArrow)"/>
+  <text x="800" y="660" class="small center" style="fill:#24694f">结果 / 状态 / 事件 / 波形</text>
+  <path d="M 953 687 L 646 687" fill="none" stroke="#24715b" stroke-width="4" marker-end="url(#greenArrow)"/>
+  <text x="80" y="783" class="small muted">页面和组件通过同一个 rv 入口接入</text>
+  <text x="960" y="783" class="small muted">应用可查询缓存、工作线程及服务状态</text>
+
+  </g>
+  <g transform="translate(0 160)">
+  <!-- 开发时生成流程单独列出，避免与运行时数据通道混淆。 -->
+  <rect x="40" y="850" width="1520" height="204" rx="14" fill="#f6f7f9" stroke="#d5dce5"/>
+  <text x="80" y="897" class="subheading">开发时 · 自动生成接口</text>
+  <text x="430" y="896" class="small muted">从后端声明到前端类型与调用代理</text>
+  <rect x="90" y="926" width="420" height="86" rx="8" fill="#ffffff" stroke="#c7d1de"/>
+  <text x="300" y="962" class="body center">TypeScript 类型与调用代理</text>
+  <text x="300" y="994" class="small center muted">供前端 rv 使用，提供类型提示</text>
+  <rect x="650" y="926" width="380" height="86" rx="8" fill="#ffffff" stroke="#c7d1de"/>
+  <text x="840" y="962" class="body center">统一契约与生成工具</text>
+  <text x="840" y="994" class="small center muted">描述接口，生成前端代码</text>
+  <rect x="1170" y="926" width="340" height="86" rx="8" fill="#ffffff" stroke="#c7d1de"/>
+  <text x="1340" y="962" class="body center">C++ 注册声明</text>
+  <text x="1340" y="994" class="small center muted">业务应用与文件 IO 模块</text>
+  <path d="M 1163 970 L 1037 970" fill="none" stroke="#748194" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#grayArrow)"/>
+  <path d="M 643 970 L 517 970" fill="none" stroke="#748194" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#grayArrow)"/>
+  <text x="800" y="1110" class="body center">后端声明变量 → 框架同步状态 → 前端绑定后自动更新显示</text>
+  </g>
+</svg>
